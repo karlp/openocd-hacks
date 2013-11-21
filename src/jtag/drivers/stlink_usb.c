@@ -1011,11 +1011,13 @@ static int stlink_configure_target_trace_port(void *handle)
 	if (res != ERROR_OK)
 		goto out;
 	/* trace privilege */
+#if I_WANTED_OOCD_TO_ENFORCE_PRIVILEGES_THIS_WOULD_HAVE_MADE_SENSE
 	res = stlink_usb_write_debug_reg(handle, ITM_TPR, 1);
 	if (res != ERROR_OK)
 		goto out;
-	/* trace port enable (port 0) */
-	res = stlink_usb_write_debug_reg(handle, ITM_TER, (1<<0));
+#endif
+	/* Turn on _all_ trace ports until oocd supports config */
+	res = stlink_usb_write_debug_reg(handle, ITM_TER, 0xffffffff);
 	if (res != ERROR_OK)
 		goto out;
 
