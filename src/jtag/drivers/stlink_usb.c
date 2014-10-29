@@ -972,54 +972,20 @@ static int stlink_usb_assert_srst(void *handle, int srst)
 static int stlink_configure_target_trace_port(void *handle)
 {
 	int res;
-	uint32_t reg;
 	struct stlink_usb_handle_s *h = handle;
 
 	assert(handle != NULL);
 
 	/* configure the TPI */
 
-	/* enable the trace subsystem */
-	res = stlink_usb_v2_read_debug_reg(handle, DCB_DEMCR, &reg);
-	if (res != ERROR_OK)
-		goto out;
-	res = stlink_usb_write_debug_reg(handle, DCB_DEMCR, TRCENA|reg);
-	if (res != ERROR_OK)
-		goto out;
-	/* set the TPI clock prescaler */
-	res = stlink_usb_write_debug_reg(handle, TPI_ACPR, h->trace.prescale);
-	if (res != ERROR_OK)
-		goto out;
 	/* select the pin protocol.  The STLinkv2 only supports asynchronous
 	 * UART emulation (NRZ) mode, so that's what we pick. */
-	res = stlink_usb_write_debug_reg(handle, TPI_SPPR, 0x02);
-	if (res != ERROR_OK)
-		goto out;
-	/* disable continuous formatting */
-	res = stlink_usb_write_debug_reg(handle, TPI_FFCR, (1<<8));
+        // KARL - this is the _only_ thing that this code should do, forcing the NRZ mode
+	res = stlink_usb_write_debug_reg(h, TPI_SPPR, 0x02);
 	if (res != ERROR_OK)
 		goto out;
 
-	/* configure the ITM */
-
-	/* unlock access to the ITM registers */
-	res = stlink_usb_write_debug_reg(handle, ITM_LAR, 0xC5ACCE55);
-	if (res != ERROR_OK)
-		goto out;
-	/* enable trace with ATB ID 1 */
-	res = stlink_usb_write_debug_reg(handle, ITM_TCR, (1<<16)|(1<<0)|(1<<2));
-	if (res != ERROR_OK)
-		goto out;
-	/* trace privilege */
-#if I_WANTED_OOCD_TO_ENFORCE_PRIVILEGES_THIS_WOULD_HAVE_MADE_SENSE
-	res = stlink_usb_write_debug_reg(handle, ITM_TPR, 1);
-	if (res != ERROR_OK)
-		goto out;
-#endif
-	/* Turn on _all_ trace ports until oocd supports config */
-	res = stlink_usb_write_debug_reg(handle, ITM_TER, 0xffffffff);
-	if (res != ERROR_OK)
-		goto out;
+	/* configuring the ITM should be done by the user */
 
 	res = ERROR_OK;
 out:
@@ -1029,6 +995,7 @@ out:
 /** */
 static void stlink_usb_trace_disable(void *handle)
 {
+#ifdef WARNINGS_ARE_NOT_ERRORS_ANYMORE
 	int res = ERROR_OK;
 	struct stlink_usb_handle_s *h = handle;
 
@@ -1036,7 +1003,7 @@ static void stlink_usb_trace_disable(void *handle)
 
 	assert(h->version.jtag >= STLINK_TRACE_MIN_VERSION);
 
-	LOG_DEBUG("Tracing: disable");
+	LOG_INFO("KARL:::Tracing: disable");
 
 	stlink_usb_init_buffer(handle, h->rx_ep, 2);
 	h->cmdbuf[h->cmdidx++] = STLINK_DEBUG_COMMAND;
@@ -1047,6 +1014,9 @@ static void stlink_usb_trace_disable(void *handle)
 		h->trace.enabled = false;
 		target_unregister_timer_callback(stlink_usb_trace_read_callback, handle);
 	}
+#else
+    (void)handle;
+#endif
 }
 
 
@@ -1082,7 +1052,7 @@ static int stlink_usb_trace_enable(void *handle)
 
 		if (res == ERROR_OK)  {
 			h->trace.enabled = true;
-			LOG_DEBUG("Tracing: recording at %" PRIu32 "Hz", trace_hz);
+			LOG_INFO("KARL Tracing: recording at %" PRIu32 "Hz", trace_hz);
 			/* We need the trace read function to be called at a
 			 * high-enough frequency to ensure reasonable
 			 * "timeliness" in processing ITM/DWT data.
@@ -1141,8 +1111,10 @@ static int stlink_usb_halt(void *handle)
 	if (h->jtag_api == STLINK_JTAG_API_V2) {
 		res = stlink_usb_write_debug_reg(handle, DCB_DHCSR, DBGKEY|C_HALT|C_DEBUGEN);
 
-		if (res == ERROR_OK && h->trace.enabled)
+		if (res == ERROR_OK && h->trace.enabled) {
+                        LOG_INFO("KARL, would have called disable");
 			stlink_usb_trace_disable(handle);
+		}
 
 		return res;
 	}
