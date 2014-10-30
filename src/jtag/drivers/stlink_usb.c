@@ -847,6 +847,7 @@ static void stlink_usb_trace_read(void *handle)
 
 			if (size > 0) {
 				size = size < sizeof(buf) ? size : sizeof(buf) - 1;
+                                LOG_DEBUG("karlll reading %zd bytes from trace", size);
 
 				res = stlink_usb_read_trace(handle, buf, size);
 				if (res == ERROR_OK) {
@@ -854,15 +855,24 @@ static void stlink_usb_trace_read(void *handle)
 						/* Log retrieved trace output */
 						if (fwrite(buf, 1, size, h->trace.output_f) > 0)
 							fflush(h->trace.output_f);
-					}
-				}
+					} else {
+                                            LOG_ERROR("not output_f?!");
+                                        }
+				} else {
+                                    LOG_ERROR("Trace failed to read %zd bytes", size);
+                                }
 			}
-		}
-	}
+		} else {
+                    LOG_ERROR("failed to request trace buffer depth");
+                }
+	} else {
+            LOG_ERROR("OOCD knew better, trace callback, but trace was disabled?!");
+        }
 }
 
 static int stlink_usb_trace_read_callback(void *handle)
 {
+        LOG_INFO("KAAARRRL - reading trace handle");
 	stlink_usb_trace_read(handle);
 	return ERROR_OK;
 }
@@ -1061,7 +1071,9 @@ static int stlink_usb_trace_enable(void *handle)
 			 * reads in advance and requeue them once they are
 			 * completed. */
 			target_register_timer_callback(stlink_usb_trace_read_callback, 1, 1, handle);
-		}
+		} else {
+                    LOG_ERROR("KARL - failed to re-enable tracing");
+                }
 	} else {
 		LOG_ERROR("Tracing is not supported by this version.");
 		res = ERROR_FAIL;
@@ -1078,16 +1090,19 @@ static int stlink_usb_run(void *handle)
 
 	assert(handle != NULL);
 
+        LOG_INFO("KARL _ stlink_usb_run api v%d", h->jtag_api);
 	if (h->jtag_api == STLINK_JTAG_API_V2) {
 		res = stlink_usb_write_debug_reg(handle, DCB_DHCSR, DBGKEY|C_DEBUGEN);
 
 		/* Try to start tracing, if requested */
-		if (res == ERROR_OK && h->trace.source_hz && !h->trace.enabled) {
+		if (res == ERROR_OK && h->trace.source_hz) {
 			if (stlink_usb_trace_enable(handle) == ERROR_OK)
-				LOG_DEBUG("Tracing: enabled");
+				LOG_INFO("KARL _ Tracing: enabled");
 			else
-				LOG_ERROR("Tracing: enable failed");
-		}
+				LOG_ERROR("KARL _ Tracing: enable failed");
+		} else {
+                    LOG_ERROR("KARL - didn't even attempt to turn it on for some reason");
+                }
 
 		return res;
 	}
