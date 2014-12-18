@@ -1046,6 +1046,7 @@ static int stlink_configure_target_trace_port(void *handle)
 
 	/* configure the ITM */
 
+#if OOCD_SHOULD_MEDDLE
 	/* unlock access to the ITM registers */
 	res = stlink_usb_write_debug_reg(handle, ITM_LAR, 0xC5ACCE55);
 	if (res != ERROR_OK)
@@ -1062,6 +1063,7 @@ static int stlink_configure_target_trace_port(void *handle)
 	res = stlink_usb_write_debug_reg(handle, ITM_TER, (1<<0));
 	if (res != ERROR_OK)
 		goto out;
+#endif
 
 	res = ERROR_OK;
 out:
@@ -1078,7 +1080,7 @@ static void stlink_usb_trace_disable(void *handle)
 
 	assert(h->version.jtag >= STLINK_TRACE_MIN_VERSION);
 
-	LOG_DEBUG("Tracing: disable");
+	LOG_INFO("Tracing: disable");
 
 	stlink_usb_init_buffer(handle, h->rx_ep, 2);
 	h->cmdbuf[h->cmdidx++] = STLINK_DEBUG_COMMAND;
@@ -1099,6 +1101,7 @@ static int stlink_usb_trace_enable(void *handle)
 	struct stlink_usb_handle_s *h = handle;
 
 	assert(handle != NULL);
+	LOG_INFO("enabling trace collection from stlink");
 
 	if (h->version.jtag >= STLINK_TRACE_MIN_VERSION) {
 		uint32_t trace_hz;
