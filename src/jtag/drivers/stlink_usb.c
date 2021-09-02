@@ -3010,6 +3010,10 @@ static int stlink_config_trace(void *handle, bool enabled,
 		uint16_t *prescaler)
 {
 	struct stlink_usb_handle_s *h = handle;
+	if (!h) {
+		LOG_INFO("ST-LINK not actually attached, ignoring attempt to set enabled: %s", enabled ? "true" : "false");
+		return ERROR_OK;
+	}
 
 	if (enabled && (!(h->version.flags & STLINK_F_HAS_TRACE) ||
 			pin_protocol != TPIU_PIN_PROTOCOL_ASYNC_UART)) {
