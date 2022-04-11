@@ -38,6 +38,7 @@ extern const struct flash_driver cc26xx_flash;
 extern const struct flash_driver cfi_flash;
 extern const struct flash_driver dsp5680xx_flash;
 extern const struct flash_driver efm32_flash;
+extern const struct flash_driver efm32s2_flash;
 extern const struct flash_driver em357_flash;
 extern const struct flash_driver esirisc_flash;
 extern const struct flash_driver faux_flash;
@@ -113,6 +114,7 @@ static const struct flash_driver * const flash_drivers[] = {
 	&cfi_flash,
 	&dsp5680xx_flash,
 	&efm32_flash,
+	&efm32s2_flash,
 	&em357_flash,
 	&esirisc_flash,
 	&faux_flash,
