@@ -2169,7 +2169,7 @@ static int jlink_swd_run_queue(void)
 	int i;
 	int ret;
 
-	LOG_DEBUG("Executing %d queued transactions", pending_scan_results_length);
+	//LOG_DEBUG("Executing %d queued transactions", pending_scan_results_length);
 
 	if (queued_retval != ERROR_OK) {
 		LOG_DEBUG("Skipping due to previous errors: %d", queued_retval);

@@ -639,12 +639,14 @@ int armv7m_wait_algorithm(struct target *target,
 		return ERROR_TARGET_INVALID;
 	}
 
+	LOG_WARNING("KARL - waiting for halted1");
 	retval = target_wait_state(target, TARGET_HALTED, timeout_ms);
 	/* If the target fails to halt due to the breakpoint, force a halt */
 	if (retval != ERROR_OK || target->state != TARGET_HALTED) {
 		retval = target_halt(target);
 		if (retval != ERROR_OK)
 			return retval;
+		LOG_WARNING("KARL - waiting for halted2");
 		retval = target_wait_state(target, TARGET_HALTED, 500);
 		if (retval != ERROR_OK)
 			return retval;

@@ -315,6 +315,7 @@ static int efm32x_read_info(struct flash_bank *bank,
 			efm32_info->family_data = &efm32_families[i];
 	}
 
+	LOG_WARNING("KARL - about to crash?");
 	if (!efm32_info->family_data) {
 		LOG_ERROR("Unknown MCU family %d", efm32_info->legacy_family);
 		return ERROR_FAIL;
@@ -499,7 +500,11 @@ static int efm32x_erase(struct flash_bank *bank, unsigned int first,
 		return ERROR_TARGET_NOT_HALTED;
 	}
 
-	efm32x_msc_lock(bank, 0);
+	ret = efm32x_msc_lock(bank, 0);
+	if (ret != ERROR_OK) {
+		LOG_ERROR("Failed to unlock MSC");
+		return ret;
+	}
 	ret = efm32x_set_wren(bank, 1);
 	if (ret != ERROR_OK) {
 		LOG_ERROR("Failed to enable MSC write");
