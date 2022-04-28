@@ -48,7 +48,7 @@
 
 /* ipdbg are utilities to debug IP-cores. It uses JTAG for transport. */
 #include "server/ipdbg.h"
-
+extern bool wchwlink;
 /** The number of JTAG queue flushes (for profiling and debugging purposes). */
 static int jtag_flush_queue_count;
 
@@ -1227,6 +1227,10 @@ static int jtag_examine_chain(void)
 	 */
 	LOG_DEBUG("DR scan interrogation for IDCODE/BYPASS");
 	retval = jtag_examine_chain_execute(idcode_buffer, max_taps);
+	
+	if(wchwlink){
+		buf_set_u32(idcode_buffer, 0, 32, 0x00001);  //Default value,for reuse risc-v jtag debug
+	}
 	if (retval != ERROR_OK)
 		goto out;
 	if (!jtag_examine_chain_check(idcode_buffer, max_taps)) {
@@ -1404,7 +1408,7 @@ static int jtag_validate_ircapture(void)
 		 */
 		uint64_t val = buf_get_u64(ir_test, chain_pos, tap->ir_length);
 		if ((val & tap->ir_capture_mask) != tap->ir_capture_value) {
-			LOG_ERROR("%s: IR capture error; saw 0x%0*" PRIx64 " not 0x%0*" PRIx32,
+			LOG_DEBUG("%s: IR capture error; saw 0x%0*" PRIx64 " not 0x%0*" PRIx32,
 				jtag_tap_name(tap),
 				(tap->ir_length + 7) / tap->ir_length, val,
 				(tap->ir_length + 7) / tap->ir_length, tap->ir_capture_value);

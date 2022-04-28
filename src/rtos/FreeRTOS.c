@@ -272,7 +272,9 @@ static int freertos_read_struct_value(
 {
 	uint8_t buf[size_bytes];
 	int retval = target_read_buffer(target, base_address + offset, size_bytes, buf);
+	
 	*value = buf_get_u64(buf, 0, size_bytes * 8);
+	
 	return retval;
 }
 
@@ -414,8 +416,10 @@ static void freertos_compute_offsets(struct rtos *rtos)
 struct freertos_thread_entry *thread_entry_list_find_by_tcb(
 	struct list_head *list, target_addr_t tcb)
 {
+	
 	struct freertos_thread_entry *t;
 	list_for_each_entry(t, list, list) {
+		
 		if (t->tcb == tcb)
 			return t;
 	}
@@ -540,8 +544,10 @@ static int freertos_update_threads(struct rtos *rtos)
 		LOG_DEBUG("FreeRTOS: Read uxTopUsedPriority at 0x%" PRIx64 ", value %" PRIu64,
 				  rtos->symbols[FREERTOS_VAL_UX_TOP_USED_PRIORITY].address,
 				  top_used_priority);
+				  
 	}
 	if (top_used_priority > FREERTOS_MAX_PRIORITIES) {
+	
 		LOG_ERROR("FreeRTOS top used priority is unreasonably big, not proceeding: %" PRIu64,
 			top_used_priority);
 		return ERROR_FAIL;
@@ -632,6 +638,7 @@ static int freertos_update_threads(struct rtos *rtos)
 				thread_entry_list_find_by_tcb(&freertos->thread_entry_list, tcb);
 
 			if (!value) {
+				
 				struct freertos_thread_entry *new_value = calloc(1, sizeof(struct freertos_thread_entry));
 				new_value->tcb = tcb;
 				/* threadid can't be 0. */

@@ -67,6 +67,8 @@ NOR_DRIVERS = \
 	%D%/stm32l4x.c \
 	%D%/stm32h7x.c \
 	%D%/gd32vf103.c \
+	%D%/wcharm.c \
+	%D%/wchriscv.c \
 	%D%/str7x.c \
 	%D%/str9x.c \
 	%D%/str9xpec.c \

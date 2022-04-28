@@ -45,6 +45,9 @@ struct cmsis_dap_backend_data {
 	hid_device *dev_handle;
 };
 
+hid_device *wlink_dev_handle=NULL;
+extern int wlink_armcheckprotect(void);
+
 static void cmsis_dap_hid_close(struct cmsis_dap *dap);
 static int cmsis_dap_hid_alloc(struct cmsis_dap *dap, unsigned int pkt_sz);
 
@@ -77,7 +80,7 @@ static int cmsis_dap_hid_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 			if (!cur_dev->product_string) {
 				LOG_DEBUG("Cannot read product string of device 0x%x:0x%x",
 					  cur_dev->vendor_id, cur_dev->product_id);
-			} else if (wcsstr(cur_dev->product_string, L"CMSIS-DAP")) {
+			} else if (wcsstr(cur_dev->product_string, L"CMSIS-DAP")||wcsstr(cur_dev->product_string, L"WCH-Link")) {
 				/* if the user hasn't specified VID:PID *and*
 				 * product string contains "CMSIS-DAP", pick it
 				 */
@@ -141,7 +144,7 @@ static int cmsis_dap_hid_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 		LOG_ERROR("unable to open CMSIS-DAP device 0x%x:0x%x", target_vid, target_pid);
 		return ERROR_FAIL;
 	}
-
+	wlink_dev_handle = dev;
 	/* allocate default packet buffer, may be changed later.
 	 * currently with HIDAPI we have no way of getting the output report length
 	 * without this info we cannot communicate with the adapter.
@@ -167,6 +170,7 @@ static int cmsis_dap_hid_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 
 	dap->command = dap->packet_buffer + REPORT_ID_SIZE;
 	dap->response = dap->packet_buffer;
+	wlink_armcheckprotect();
 	return ERROR_OK;
 }
 

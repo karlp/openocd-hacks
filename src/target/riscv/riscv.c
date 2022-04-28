@@ -24,6 +24,8 @@
 #include "debug_defines.h"
 #include <helper/bits.h>
 
+extern bool wchwlink;
+
 #define get_field(reg, mask) (((reg) & (mask)) / ((mask) & ~((mask) << 1)))
 #define set_field(reg, mask, val) (((reg) & ~(mask)) | (((val) * ((mask) & ~((mask) << 1))) & (mask)))
 
@@ -399,6 +401,9 @@ static uint32_t dtmcontrol_scan(struct target *target, uint32_t out)
 	}
 
 	uint32_t in = buf_get_u32(field.in_value, 0, 32);
+	if(wchwlink){
+		buf_set_u32(&in, 0, 32, 0x00000071);
+	}
 	LOG_DEBUG("DTMCONTROL: 0x%x -> 0x%x", out, in);
 
 	return in;
@@ -584,7 +589,7 @@ static int maybe_add_trigger_t1(struct target *target,
 
 	return ERROR_OK;
 }
-
+extern unsigned char riscvchip; 
 static int maybe_add_trigger_t2(struct target *target,
 		struct trigger *trigger, uint64_t tdata1)
 {
@@ -597,7 +602,8 @@ static int maybe_add_trigger_t2(struct target *target,
 	}
 
 	/* address/data match trigger */
-	tdata1 |= MCONTROL_DMODE(riscv_xlen(target));
+	if(riscvchip==0)
+		tdata1 |= MCONTROL_DMODE(riscv_xlen(target));
 	tdata1 = set_field(tdata1, MCONTROL_ACTION,
 			MCONTROL_ACTION_DEBUG_MODE);
 	tdata1 = set_field(tdata1, MCONTROL_MATCH, MCONTROL_MATCH_EQUAL);
@@ -702,7 +708,6 @@ static int add_trigger(struct target *target, struct trigger *trigger)
 	for (i = 0; i < r->trigger_count; i++) {
 		if (r->trigger_unique_id[i] != -1)
 			continue;
-
 		riscv_set_register(target, GDB_REGNO_TSELECT, i);
 
 		uint64_t tdata1;
@@ -896,7 +901,6 @@ int riscv_add_breakpoint(struct target *target, struct breakpoint *breakpoint)
 					TARGET_PRIxADDR, breakpoint->length, breakpoint->address);
 			return ERROR_FAIL;
 		}
-
 	} else if (breakpoint->type == BKPT_HARD) {
 		struct trigger trigger;
 		trigger_from_breakpoint(&trigger, breakpoint);
@@ -1334,6 +1338,17 @@ static int riscv_assert_reset(struct target *target)
 	LOG_DEBUG("[%d]", target->coreid);
 	struct target_type *tt = get_target_type(target);
 	riscv_invalidate_register_cache(target);
+	if(wchwlink){
+		int ret=riscv_halt(target);
+		if(ret == ERROR_OK){
+			return tt->assert_reset(target);
+		}
+		else{
+			LOG_ERROR("[wch] hart must be halted before reset!");
+			return ERROR_FAIL;
+		}
+
+	}
 	return tt->assert_reset(target);
 }
 
@@ -3874,7 +3889,7 @@ int riscv_enumerate_triggers(struct target *target)
 
 	riscv_set_register(target, GDB_REGNO_TSELECT, tselect);
 
-	LOG_INFO("[%s] Found %d triggers", target_name(target), r->trigger_count);
+	LOG_DEBUG("[%s] Found %d triggers", target_name(target), r->trigger_count);
 
 	return ERROR_OK;
 }

@@ -46,7 +46,7 @@
 #endif
 
 static int help_flag, version_flag;
-
+extern int noloadflag;
 static const struct option long_options[] = {
 	{"help",		no_argument,			&help_flag,		1},
 	{"version",		no_argument,			&version_flag,	1},
@@ -263,7 +263,8 @@ static void add_default_dirs(void)
 		free(path);
 	}
 
-	path = alloc_printf("%s/%s/%s", exepath, bin2data, "scripts");
+	//path = alloc_printf("%s/%s/%s", exepath, bin2data, "scripts");
+	path = alloc_printf("%s/%s/%s", exepath, "../", "scripts");
 	if (path) {
 		add_script_search_dir(path);
 		free(path);
@@ -277,11 +278,12 @@ int parse_cmdline_args(struct command_context *cmd_ctx, int argc, char *argv[])
 {
 	int c;
 
+
 	while (1) {
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "hvd::l:f:s:c:", long_options, &option_index);
+		c = getopt_long(argc, argv, "hvd::l:f:s:c:x", long_options, &option_index);
 
 		/* Detect the end of the options. */
 		if (c == -1)
@@ -318,8 +320,11 @@ int parse_cmdline_args(struct command_context *cmd_ctx, int argc, char *argv[])
 					command_run_linef(cmd_ctx, "log_output %s", optarg);
 				break;
 			case 'c':		/* --command | -c */
-				if (optarg)
-				    add_config_command(optarg);
+				if (optarg)				
+				    add_config_command(optarg);								
+				break;
+			case 'x':              // for compatible	
+				noloadflag=1;
 				break;
 			default:  /* '?' */
 				/* getopt will emit an error message, all we have to do is bail. */
