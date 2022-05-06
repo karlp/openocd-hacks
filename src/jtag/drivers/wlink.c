@@ -101,6 +101,8 @@ int pReadData(int dev, int endpoint, unsigned char *buf, unsigned long *length)
 }
 #endif
 
+void wlink_ramcodewrite(uint8_t *buffer, int size);
+
 unsigned char riscvchip;
 unsigned long chipiaddr;
 unsigned long pagesize;
