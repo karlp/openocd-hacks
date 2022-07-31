@@ -141,7 +141,7 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id);
 static int ch32x_write_block(struct flash_bank *bank, const uint8_t *buffer,
 		uint32_t address, uint32_t count);
 extern int wlink_armcheckprotect(void);
-extern void wlink_sendchip(void);
+extern void wlink_sendchip(config);
 	
 
 
@@ -474,7 +474,9 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
 	uint32_t cpuid, device_id_register = 0;
     uint32_t testid=0;
     uint32_t tmp,tmp1,tmp2=0;
-
+	uint8_t user_cfg,config;
+	target_read_u8(target, 0x1ffff802, &user_cfg);
+	config=user_cfg>>6;
 	target_read_u32(target, 0x1ffff884, &testid);			
   	if(((testid>>16)==0x2000)||((testid>>16)==0x1000)||((testid>>16)==0x3000)){
   		target_read_u32(target, 0x1ffff7e8, &tmp);
@@ -484,7 +486,7 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
   			  if(tmp2==0xdc78fe34)
   			    armchip=1;
   				*device_id=0x20000410;
-  				wlink_sendchip();
+  				wlink_sendchip(config);
   				return ERROR_OK;
   		}
   	
@@ -498,7 +500,7 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
   	if(((testid>>20)==0x203)||((testid>>20)==0x205)||((testid>>20)==0x207)||((testid>>20)==0x208)){	
   		 	armchip=2;
   			*device_id=0x20000410;
-  			wlink_sendchip();
+  			wlink_sendchip(config);
   			return ERROR_OK;
 		}
 
@@ -624,7 +626,7 @@ static int ch32x_probe(struct flash_bank *bank)
 		bank->prot_blocks[31].size = (num_pages - (31 * ch32x_info->ppage_size)) * page_size;
 
 	ch32x_info->probed = 1;
-
+	wlink_armcheckprotect();
 	return ERROR_OK;
 }
 

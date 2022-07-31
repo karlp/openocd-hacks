@@ -61,10 +61,11 @@
  * found in most modern embedded processors.
  */
 extern bool wchwlink;
+extern uint32_t chip_type;
 extern int wlink_quitreset(void);
 extern unsigned char riscvchip;
 extern uint8_t armchip;
-extern void wlink_armquitreset(void);
+extern void wlink_armquitreset(struct cmsis_dap *dap);
 int gdb_actual_connections;
 struct target_desc_format {
 	char *tdesc;
@@ -1722,7 +1723,7 @@ static int gdb_breakpoint_watchpoint_packet(struct connection *connection,
 	LOG_DEBUG("[%s]", target_name(target));
 	type = strtoul(packet + 1, &separator, 16);
 	if(wchwlink){
-		if(riscvchip==6 && type==1 && target->breakpoints ){
+		if((riscvchip==6 ||(((uint16_t)chip_type) ==0x051c)) && type==1 && target->breakpoints ){
 			struct breakpoint *p= target->breakpoints->next;
 			int len=0;
 			while(p){
@@ -1732,7 +1733,7 @@ static int gdb_breakpoint_watchpoint_packet(struct connection *connection,
 			if(len>2)
 				type=0;		
 		}
-		if(riscvchip==1||riscvchip==2||riscvchip==3){
+		if(riscvchip==1||riscvchip==2||riscvchip==3 ||((uint16_t)chip_type) ==0x0510){
 			type=0;
 		}
 	}
@@ -3144,7 +3145,7 @@ static bool gdb_handle_vrun_packet(struct connection *connection, const char *pa
 	gdb_put_packet(connection, "S00", 3);
 	return true;
 }
-
+extern struct cmsis_dap *cmsis_dap_handle;
 static int gdb_v_packet(struct connection *connection,
 		char const *packet, int packet_size)
 {
@@ -3157,6 +3158,13 @@ static int gdb_v_packet(struct connection *connection,
 		if (out != GDB_THREAD_PACKET_NOT_CONSUMED)
 			return out;
 	}
+	if (strncmp(packet, "vKill", 5) == 0){
+		if(riscvchip){
+			wlink_quitreset();
+		}else if(armchip){
+			wlink_armquitreset(cmsis_dap_handle);
+			}
+	} 
 
 	if (strncmp(packet, "vCont", 5) == 0) {
 		bool handled;
@@ -3429,6 +3437,27 @@ static int gdb_input_inner(struct connection *connection)
 		/* terminate with zero */
 		gdb_packet_buffer[packet_size] = '\0';
 
+		// if(1){	
+		// 	char buf[64];
+		// 	unsigned offset = 0;
+		// 	int i = 0;
+		// 	while (i < packet_size && offset < 56) {
+		// 		if (packet[i] == '\\') {
+		// 			buf[offset++] = '\\';
+		// 			buf[offset++] = '\\';
+		// 		} else if (isprint(packet[i])) {
+		// 			buf[offset++] = packet[i];
+		// 		} else {
+		// 			sprintf(buf + offset, "\\x%02x", (unsigned char) packet[i]);
+		// 			offset += 4;
+		// 		}
+		// 		i++;
+		// 	}
+		// 	buf[offset] = 0;
+		// 	LOG_INFO("received packet: '%s'%s", buf, i < packet_size ? "..." : "");
+		// }
+
+
 		gdb_log_incoming_packet(gdb_packet_buffer);
 		if (packet_size > 0) {
 			retval = ERROR_OK;
@@ -3557,17 +3586,13 @@ static int gdb_input_inner(struct connection *connection)
 					if (retval != ERROR_OK)
 						return retval;
 					break;
-				case 'k':
+				case 'k':					
 					if (gdb_con->extended_protocol) {
 						gdb_con->attached = false;
 						break;
 					}
 					gdb_put_packet(connection, "OK", 2);
-					if(riscvchip){
-						wlink_quitreset();
-					}else if(armchip){
-						wlink_armquitreset();
-					}
+
 					return ERROR_SERVER_REMOTE_CLOSED;
 				case '!':
 					/* handle extended remote protocol */

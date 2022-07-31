@@ -626,6 +626,7 @@ static int wlink_dmi_op_timeout(struct target *target, uint32_t *data_in,
 			result=DMI_OP(0, (unsigned char	)address, 0, (unsigned char	)dmi_op, &address_in, data_in,&recvOP);
 			if(!result){
 					LOG_ERROR("failed %s at 0x%x, status=%d", op_name, address, status);
+					LOG_ERROR("Maybe the device has been removed");
 					server_quit();
 					return ERROR_FAIL;
 				}		
@@ -884,11 +885,11 @@ int dmstatus_read_timeout(struct target *target, uint32_t *dmstatus,
 {
 	int result = dmi_op_timeout(target, dmstatus, NULL, DMI_OP_READ,
 			DM_DMSTATUS, 0, timeout_sec, false, true);
-	
 	if (result != ERROR_OK)
 		return result;
 	int dmstatus_version = get_field(*dmstatus, DM_DMSTATUS_VERSION);
 	if (dmstatus_version != 2 && dmstatus_version != 3) {
+		
 		LOG_ERROR("OpenOCD only supports Debug Module version 2 (0.13) and 3 (1.0), not "
 				"%d (dmstatus=0x%x). This error might be caused by a JTAG "
 				"signal issue. Try reducing the JTAG clock speed.",
@@ -4242,9 +4243,9 @@ static int write_memory(struct target *target, target_addr_t address,
 				}
 			}
 								
-			write_flash_data(target, flashaddress, size, count, buffer);			
+			//write_flash_data(target, flashaddress, size, count, buffer);			
 		}				
-		if((riscvchip==0x01)||(riscvchip==0x02)||(riscvchip==0x06))
+		if((riscvchip==0x01)||(riscvchip==0x02)||(riscvchip==0x06)||(riscvchip==0x05))
 		{			
 			write_flash_data(target, address, size, count, buffer);			
 		}

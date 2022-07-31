@@ -24,6 +24,7 @@
 extern int wlink_erase(void);
 extern unsigned char riscvchip;
 extern int wlink_reset();
+extern void wlink_getromram(uint32_t *rom,uint32_t *ram);
 extern int wlink_write(const uint8_t *buffer, uint32_t offset, uint32_t count);
 extern int noloadflag;
 struct ch32vx_options
@@ -84,8 +85,10 @@ static int ch32vx_erase(struct flash_bank *bank, int first, int last)
 static int ch32vx_write(struct flash_bank *bank, const uint8_t *buffer,
 						uint32_t offset, uint32_t count)
 {
+	
 	if(noloadflag)
 		return ERROR_OK;
+	
 	int ret = wlink_write(buffer, offset, count);
 	if((riscvchip==0x02)||(riscvchip==0x03))
 		 wlink_reset(); 
@@ -105,6 +108,10 @@ static int ch32vx_get_flash_size(struct flash_bank *bank, uint16_t *flash_size_i
 {
 
 	struct target *target = bank->target;
+	if((riscvchip==0x02)||(riscvchip==0x03)){
+		*flash_size_in_kb=448;
+		return ERROR_OK;
+	}
 	int retval = target_read_u16(target, 0x1ffff7e0, flash_size_in_kb);
 	if (retval != ERROR_OK)
 		return retval;
@@ -117,6 +124,8 @@ static int ch32vx_probe(struct flash_bank *bank)
 	uint16_t delfault_max_flash_size=512;
 	uint16_t flash_size_in_kb;
 	uint32_t device_id;
+	uint32_t rom=0;
+	uint32_t ram=0;
 	int page_size;
 	uint32_t base_address = 0x00000000;
 	uint32_t rid = 0;
@@ -135,6 +144,12 @@ static int ch32vx_probe(struct flash_bank *bank)
 		LOG_INFO("flash size = %dkbytes", flash_size_in_kb);
 	else
 		flash_size_in_kb=delfault_max_flash_size;
+	if((riscvchip==0x05)||(riscvchip==0x06)||(riscvchip==0x03))
+	{	
+		wlink_getromram(&rom,&ram);
+	if((rom != 0)&&(ram !=0))
+		LOG_INFO("ROM %d kbytes RAM %d kbytes" ,rom,ram);
+	}
 	// /* calculate numbers of pages */
 	int num_pages = flash_size_in_kb * 1024 / page_size;
 	bank->base = base_address;
