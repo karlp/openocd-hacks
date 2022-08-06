@@ -48,7 +48,7 @@ extern unsigned char riscvchip;
 extern unsigned long pagesize;
 extern int server_quit(void);
 extern unsigned long ramaddr;
-uint32_t flashaddr= 0;
+uint32_t flashaddr;
 extern bool wchwlink;
 static int riscv013_on_step_or_resume(struct target *target, bool step);
 static int riscv013_step_or_resume_current_hart(struct target *target,
@@ -255,7 +255,7 @@ static void flush_flash_data(struct target *target)
 	uint64_t a3;
 	uint64_t a4;
 	RISCV013_INFO(info);
-	/*write */
+	/* write */
 	if (info->flash_len) {
 		execute_fence(target);
 		register_read_direct(target, &a0, GDB_REGNO_A0);
@@ -290,7 +290,7 @@ static void flush_flash_data(struct target *target)
 		info->flash_start_addr = 0;
 		info->flash_len = 0;
 		info->flash_offset = 0;
-		memset(info->flash_data,0,sizeof(info->flash_data));
+		memset(info->flash_data, 0, 0, sizeof(info->flash_data));
 	}
 }
 int write_flash_data(struct target *target, target_addr_t address,
@@ -577,14 +577,14 @@ static int wlink_dmi_op_timeout(struct target *target, unsigned long *data_in,
 	}
 
 	time_t start = time(NULL);
-	int result= 0;
+	int result = 0;
 	/* This first loop performs the request.  Note that if for some reason this
 	 * stays busy, it is actually due to the previous access. */
 	while (1) {
 		if (dmi_op == DMI_OP_READ) {
-			result=
-				DMI_OP(0, (unsigned char )address, 0, (unsigned char     )dmi_op,
-					(unsigned char *)&address_in, data_in,&recvOP);
+			result =
+				DMI_OP(0, (unsigned char) address, 0, (unsigned char) dmi_op,
+					(unsigned char *) &address_in, data_in,&recvOP);
 			if (!result) {
 				LOG_ERROR("failed %s at 0x%x, status=%d", op_name, address, status);
 				LOG_ERROR("Maybe the device has been removed");
@@ -726,7 +726,7 @@ static int dmi_op_timeout(struct target *target, uint32_t *data_in,
 	bool *dmi_busy_encountered, int dmi_op, uint32_t address,
 	uint32_t data_out, int timeout_sec, bool exec, bool ensure_success)
 {
-	int ret= 1;
+	int ret = 1;
 	if (wchwlink) {
 		/* FIXME: This is where the code pays the price for all the willy-nilly */
 		/* casting between long*'s (which are 64-bit aligned) and uint32_t*'s */
@@ -3403,7 +3403,7 @@ static int read_memory_progbuf_inner(struct target *target, target_addr_t addres
 	if (dmi_write(target, DM_ABSTRACTAUTO,
 			1 << DM_ABSTRACTAUTO_AUTOEXECDATA_OFFSET) != ERROR_OK)
 		goto error;
-	result= ERROR_FAIL;
+	result = ERROR_FAIL;
 	goto error;
 	/* Read garbage from dmi_data0, which triggers another execution of the
 	 * program. Now dmi_data0 contains the first good result, and s1 the next
@@ -4303,21 +4303,21 @@ static int write_memory(struct target *target, target_addr_t address,
 						address= address-2;
 						read_memory_progbuf_one(target, address, 4,
 							(uint8_t *)&actual_value);
-						txbuffer[0]= ((uint32_t)actual_value)&0x000000ff;
-						txbuffer[1]= (((uint32_t)actual_value)&0x0000ff00)>>
+						txbuffer[0] = ((uint32_t)actual_value)&0x000000ff;
+						txbuffer[1] = (((uint32_t)actual_value)&0x0000ff00)>>
 							8;
-						txbuffer[2]= *buffer;
-						txbuffer[3]= *(buffer+1);
+						txbuffer[2] = *buffer;
+						txbuffer[3] = *(buffer+1);
 						write_memory_progbuf(target, address, 4, 1,
 							(uint8_t *)&txbuffer);
 						address= address+2;
 						read_memory_progbuf_one(target, address, 4,
 							(uint8_t *)&actual_value);
-						txbuffer[0]= *(buffer+2);
-						txbuffer[1]= *(buffer+3);
-						txbuffer[2]= (((uint32_t)actual_value)&0x00ffffff)>>
+						txbuffer[0] = *(buffer+2);
+						txbuffer[1] = *(buffer+3);
+						txbuffer[2] = (((uint32_t)actual_value)&0x00ffffff)>>
 							16;
-						txbuffer[3]= ((uint32_t)actual_value)>>24;
+						txbuffer[3] = ((uint32_t)actual_value)>>24;
 						write_memory_progbuf(target, address, 4, 1,
 							(uint8_t *)&txbuffer);
 					}
@@ -4332,12 +4332,12 @@ static int write_memory(struct target *target, target_addr_t address,
 								address,
 								4,
 								(uint8_t *)&actual_value);
-							txbuffer[0]= *buffer;
-							txbuffer[1]= *(buffer+1);
-							txbuffer[2]=
+							txbuffer[0] = *buffer;
+							txbuffer[1] = *(buffer+1);
+							txbuffer[2] =
 								(((uint32_t)actual_value)&
 								0x00ffffff)>>16;
-							txbuffer[3]= ((uint32_t)actual_value)>>24;
+							txbuffer[3] = ((uint32_t)actual_value)>>24;
 							write_memory_progbuf(target,
 								address,
 								4,
@@ -4349,13 +4349,13 @@ static int write_memory(struct target *target, target_addr_t address,
 								address,
 								4,
 								(uint8_t *)&actual_value);
-							txbuffer[0]= ((uint32_t)actual_value)&
+							txbuffer[0] = ((uint32_t)actual_value)&
 								0x000000ff;
-							txbuffer[1]=
+							txbuffer[1] =
 								(((uint32_t)actual_value)&
 								0x0000ff00)>>8;
-							txbuffer[2]= *buffer;
-							txbuffer[3]= *(buffer+1);
+							txbuffer[2] = *buffer;
+							txbuffer[3] = *(buffer+1);
 							write_memory_progbuf(target,
 								address,
 								4,
@@ -4368,7 +4368,7 @@ static int write_memory(struct target *target, target_addr_t address,
 
 			/*write_flash_data(target, flashaddress, size, count, buffer); */
 		}
-		if ((riscvchip == 0x01)||(riscvchip == 0x02)||(riscvchip == 0x06)||
+		if ((riscvchip == 0x01) || (riscvchip == 0x02) || (riscvchip == 0x06)||
 			(riscvchip == 0x05))
 			write_flash_data(target, address, size, count, buffer);
 		return ERROR_OK;

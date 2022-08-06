@@ -1358,7 +1358,7 @@ static int riscv_assert_reset(struct target *target)
 	struct target_type *tt = get_target_type(target);
 	riscv_invalidate_register_cache(target);
 	if (wchwlink) {
-		int ret= riscv_halt(target);
+		int ret = riscv_halt(target);
 		if (ret == ERROR_OK)
 			return tt->assert_reset(target);
 		else {
@@ -2320,7 +2320,7 @@ int riscv_openocd_poll(struct target *target)
 								break;
 							case SEMI_HANDLED:
 								/* This hart should be resumed, along with any other
-								         * harts that halted due to haltgroups. */
+								 * harts that halted due to haltgroups. */
 								should_resume++;
 								break;
 							case SEMI_ERROR:
@@ -4269,10 +4269,12 @@ int riscv_init_registers(struct target *target)
 	};
 
 	/* These types are built into gdb. */
-	static struct reg_data_type type_ieee_single =
-	{ .type = REG_TYPE_IEEE_SINGLE, .id = "ieee_single" };
-	static struct reg_data_type type_ieee_double =
-	{ .type = REG_TYPE_IEEE_DOUBLE, .id = "ieee_double" };
+	static struct reg_data_type type_ieee_single = {
+		.type = REG_TYPE_IEEE_SINGLE, .id = "ieee_single"
+	};
+	static struct reg_data_type type_ieee_double = {
+		.type = REG_TYPE_IEEE_DOUBLE, .id = "ieee_double"
+	};
 	static struct reg_data_type_union_field single_double_fields[] = {
 		{"float", &type_ieee_single, single_double_fields + 1},
 		{"double", &type_ieee_double, NULL},
