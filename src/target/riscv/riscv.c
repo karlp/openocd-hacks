@@ -401,8 +401,8 @@ static uint32_t dtmcontrol_scan(struct target *target, uint32_t out)
 	}
 
 	uint32_t in = buf_get_u32(field.in_value, 0, 32);
-	if(wchwlink){
-		buf_set_u32(&in, 0, 32, 0x00000071);
+	if (wchwlink){
+		buf_set_u32((uint8_t*)&in, 0, 32, 0x00000071);
 	}
 	LOG_DEBUG("DTMCONTROL: 0x%x -> 0x%x", out, in);
 
@@ -602,8 +602,9 @@ static int maybe_add_trigger_t2(struct target *target,
 	}
 
 	/* address/data match trigger */
-	if(riscvchip==0)
+	if (riscvchip==0) {
 		tdata1 |= MCONTROL_DMODE(riscv_xlen(target));
+	}
 	tdata1 = set_field(tdata1, MCONTROL_ACTION,
 			MCONTROL_ACTION_DEBUG_MODE);
 	tdata1 = set_field(tdata1, MCONTROL_MATCH, MCONTROL_MATCH_EQUAL);
@@ -1338,12 +1339,11 @@ static int riscv_assert_reset(struct target *target)
 	LOG_DEBUG("[%d]", target->coreid);
 	struct target_type *tt = get_target_type(target);
 	riscv_invalidate_register_cache(target);
-	if(wchwlink){
+	if (wchwlink) {
 		int ret=riscv_halt(target);
-		if(ret == ERROR_OK){
+		if (ret == ERROR_OK) {
 			return tt->assert_reset(target);
-		}
-		else{
+		} else {
 			LOG_ERROR("[wch] hart must be halted before reset!");
 			return ERROR_FAIL;
 		}

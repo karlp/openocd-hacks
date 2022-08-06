@@ -606,6 +606,7 @@ static int davinci_write_page_ecc4infix(struct nand_device *nand, uint32_t page,
 		davinci_write_block_data(nand, oob, 16);
 		oob += 16;
 		oob_size -= 16;
+		(void) oob_size;
 
 	} while (data_size);
 

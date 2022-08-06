@@ -240,7 +240,7 @@ typedef struct {
 	/* DM that provides access to this target. */
 	dm013_info_t *dm;
 	uint32_t flash_start_addr;
-	uint32_t  flash_len;    
+	uint32_t  flash_len;
 	uint32_t  flash_offset;
 	uint8_t flash_data[256];
 } riscv013_info_t;
@@ -256,40 +256,14 @@ static riscv013_info_t *get_info(const struct target *target)
 	assert(info->version_specific);
 	return (riscv013_info_t *) info->version_specific;
 }
-static int flush_flash_data(struct target *target)
+static void flush_flash_data(struct target *target)
 {
-	uint64_t regs[31];
-	uint64_t s0; 
-	uint64_t ra;
-	uint64_t sp;
-	uint64_t gp;
-	uint64_t tp;
+	uint64_t s1;
 	uint64_t a0;
+	uint64_t a1;
+	uint64_t a2;
+	uint64_t a3;
 	uint64_t a4;
-	uint64_t a5;
-	uint64_t a6;
-	uint64_t a7;
-	uint64_t s2;
-	uint64_t s3;
-	uint64_t s4;
-	uint64_t s5;
-	uint64_t s6;
-	uint64_t s7;
-	uint64_t s8;
-	uint64_t s9;
-	uint64_t s10;
-	uint64_t s11;
-	uint64_t t4;
-	uint64_t t5;
-	uint64_t t6;	
-	uint64_t t0;
-	uint64_t t1;
-	uint64_t t2;
-	uint64_t t3;	
-	uint64_t s1; 
-	uint64_t a1; 
-	uint64_t a2; 
-	uint64_t a3; 
 	RISCV013_INFO(info);
 	//write 
 	if(info->flash_len)
@@ -331,24 +305,23 @@ static int flush_flash_data(struct target *target)
 	}
 }
 int write_flash_data(struct target *target, target_addr_t address,
-		uint32_t size, uint32_t count, uint8_t *buffer)
+		uint32_t size, uint32_t count, const uint8_t *buffer)
 {
 	uint32_t total_len;
-	uint32_t start_address,temp,temp1;
-	uint8_t * start_buffer;
-	RISCV013_INFO(info);	
+	uint32_t start_address;
+	const uint8_t * start_buffer;
+	RISCV013_INFO(info);
 	start_address = address;
 	start_buffer = buffer;
 	total_len = size*count;
-    info->flash_start_addr = start_address;
+	info->flash_start_addr = start_address;
 	info->flash_len = total_len;
-	info->flash_offset = total_len; 				
-	memcpy(info->flash_data,start_buffer,total_len);				
-	if(total_len <=4)  
-		{
-			flush_flash_data(target);
-			return 0;
-		}
+	info->flash_offset = total_len;
+	memcpy(info->flash_data,start_buffer,total_len);
+	if (total_len <= 4) {
+		flush_flash_data(target);
+		return 0;
+	}
 
 	return 0;
 }
@@ -569,8 +542,8 @@ static uint32_t dtmcontrol_scan(struct target *target, uint32_t out)
 	}
 
 	uint32_t in = buf_get_u32(field.in_value, 0, 32);
-	if(wchwlink){
-		buf_set_u32(&in, 0, 32, 0x00000071);
+	if (wchwlink) {
+		buf_set_u32((uint8_t *)&in, 0, 32, 0x00000071);
 	}
 	LOG_DEBUG("DTMCS: 0x%x -> 0x%x", out, in);
 
@@ -587,19 +560,19 @@ static void increase_dmi_busy_delay(struct target *target)
 
 	dtmcontrol_scan(target, DTM_DTMCS_DMIRESET);
 }
-static int wlink_dmi_op_timeout(struct target *target, uint32_t *data_in,
+static int wlink_dmi_op_timeout(struct target *target, unsigned long *data_in,
 		bool *dmi_busy_encountered, int dmi_op, uint32_t address,
 		uint32_t data_out, int timeout_sec, bool exec, bool ensure_success)
 {
 	dmi_status_t status;
 	uint32_t address_in;
 	uint8_t	recvOP;
-	uint32_t recvData;
+	unsigned long recvData;
 	if (dmi_busy_encountered)
 		*dmi_busy_encountered = false;
-	
-	jtag_execute_queue();  
-	
+
+	jtag_execute_queue();
+
 	const char *op_name;
 	switch (dmi_op) {
 		case DMI_OP_NOP:
@@ -623,7 +596,7 @@ static int wlink_dmi_op_timeout(struct target *target, uint32_t *data_in,
 	while (1) {
 		if(dmi_op == DMI_OP_READ)
 		{
-			result=DMI_OP(0, (unsigned char	)address, 0, (unsigned char	)dmi_op, &address_in, data_in,&recvOP);
+			result=DMI_OP(0, (unsigned char	)address, 0, (unsigned char	)dmi_op, (unsigned char*)&address_in, data_in,&recvOP);
 			if(!result){
 					LOG_ERROR("failed %s at 0x%x, status=%d", op_name, address, status);
 					LOG_ERROR("Maybe the device has been removed");
@@ -631,14 +604,14 @@ static int wlink_dmi_op_timeout(struct target *target, uint32_t *data_in,
 					return ERROR_FAIL;
 				}		
 		}else{
-			DMI_OP(0, (unsigned char	)address, data_out, (unsigned char	)dmi_op, &address_in, &recvData,&recvOP);
+			DMI_OP(0, (unsigned char	)address, data_out, (unsigned char	)dmi_op, (unsigned char*)&address_in, &recvData,&recvOP);
 		}
 		status = recvOP;
 		if (status == DMI_STATUS_BUSY) {
 			increase_dmi_busy_delay(target);
 			if (dmi_busy_encountered)
 				*dmi_busy_encountered = true;
-			DMI_OP(0, (unsigned char	)DM_ABSTRACTCS, DM_ABSTRACTCS_CMDERR, (unsigned char	)DMI_OP_WRITE, &address_in, &recvData,&recvOP);
+			DMI_OP(0, (unsigned char	)DM_ABSTRACTCS, DM_ABSTRACTCS_CMDERR, (unsigned char	)DMI_OP_WRITE, (unsigned char*)&address_in, &recvData,&recvOP);
 		} else if (status == DMI_STATUS_SUCCESS) {
 			break;
 		} else {
@@ -755,10 +728,22 @@ static int dmi_op_timeout(struct target *target, uint32_t *data_in,
 		uint32_t data_out, int timeout_sec, bool exec, bool ensure_success)
 {
 	int ret=1;
-	if(wchwlink){
-			ret=wlink_dmi_op_timeout(target,data_in,dmi_busy_encountered,dmi_op,address,data_out,timeout_sec,exec,ensure_success);
+	if (wchwlink) {
+		// FIXME: This is where the code pays the price for all the willy-nilly
+		// casting between long*'s (which are 64-bit aligned) and uint32_t*'s
+		// which are 32-bit aligned. Overall, this whole module needs a rethinkg
+		// of data types. If you have to cast five arguments of a six argument
+		// method, or case one speicifc argument on EVERY call, you're living wrong.
+		// This code is living wrong.
+		union {
+			unsigned long* l;
+			uint32_t* u32;
+		} as_long;
+		as_long.u32 = data_in;
+		ret = wlink_dmi_op_timeout(target, as_long.l, dmi_busy_encountered,
+			dmi_op, address, data_out, timeout_sec, exec, ensure_success);
 	}
-	if(ret==ERROR_OK){
+	if (ret==ERROR_OK) {
 		return ret;
 	}
 	select_dmi(target);
@@ -817,7 +802,7 @@ static int dmi_op_timeout(struct target *target, uint32_t *data_in,
 		 * Note that NOP can result in a 'busy' result as well, but that would be
 		 * noticed on the next DMI access we do. */
 		while (1) {
-			status = dmi_scan(target, &address_in, data_in, DMI_OP_NOP, address, 0,
+			status = dmi_scan(target, (unsigned int*)&address_in, data_in, DMI_OP_NOP, address, 0,
 					false);
 			if (status == DMI_STATUS_BUSY) {
 				increase_dmi_busy_delay(target);
@@ -1766,7 +1751,7 @@ static int examine(struct target *target)
 		dmi_write(target, DM_DMCONTROL, DM_DMCONTROL_DMACTIVE);
 		dm->was_reset = true;
 	}
-	if(!wchwlink)
+	if (!wchwlink)
 	{
 		dmi_write(target, DM_DMCONTROL, DM_DMCONTROL_HARTSELLO |
 			DM_DMCONTROL_HARTSELHI | DM_DMCONTROL_DMACTIVE |
@@ -1903,7 +1888,7 @@ static int examine(struct target *target)
 		r->xlen = 64;
 	else
 		r->xlen = 32;
-	if(wchwlink)
+	if (wchwlink)
 		r->xlen = 32;
 	/* Save s0 and s1. The register cache hasn't be initialized yet so we
 	 * need to take care of this manually. */
@@ -2526,7 +2511,7 @@ static int init_target(struct command_context *cmd_ctx,
 static int assert_reset(struct target *target)
 {
 	RISCV_INFO(r);
-	
+
 	select_dmi(target);
 
 	uint32_t control_base = set_field(0, DM_DMCONTROL_DMACTIVE, 1);
@@ -2579,7 +2564,7 @@ static int assert_reset(struct target *target)
 
  static int deassert_reset(struct target *target)
 {
-	
+
 	RISCV_INFO(r);
 	RISCV013_INFO(info);
 	select_dmi(target);
@@ -2590,7 +2575,7 @@ static int assert_reset(struct target *target)
 	control = set_field(control, DM_DMCONTROL_DMACTIVE, 1);
 	dmi_write(target, DM_DMCONTROL,
 	set_hartsel(control, r->current_hartid));
-	
+
 	uint32_t dmstatus;
 	int dmi_busy_delay = info->dmi_busy_delay;
 	time_t start = time(NULL);
@@ -2615,9 +2600,9 @@ static int assert_reset(struct target *target)
 						index, riscv_reset_timeout_sec);
 			if (result != ERROR_OK)
 				return result;
-			if(wchwlink)
+			if (wchwlink)
 				break;
-			
+
 			/* Certain debug modules, like the one in GD32VF103
 			 * MCUs, violate the specification's requirement that
 			 * each hart is in "exactly one of four states" and,
@@ -2648,22 +2633,20 @@ static int assert_reset(struct target *target)
 			break;
 	}
 	info->dmi_busy_delay = dmi_busy_delay;
-	
+
 	uint64_t tmpDcsr;
 	int res = register_read_direct(target, &tmpDcsr, GDB_REGNO_DCSR);
-	if(res != ERROR_OK){
+	if (res != ERROR_OK) {
 		LOG_DEBUG("[wch] dcsr read fail!");
-	}
-	else{
-		LOG_DEBUG("[wch] read dcsr value is 0x%x", tmpDcsr);
+	} else {
+		LOG_DEBUG("[wch] read dcsr value is 0x%llx", tmpDcsr);
 		//enable ebreak in m&u mode
 		tmpDcsr = set_field(tmpDcsr, CSR_DCSR_EBREAKM, 1);
-		tmpDcsr = set_field(tmpDcsr, CSR_DCSR_EBREAKU, 1);		
+		tmpDcsr = set_field(tmpDcsr, CSR_DCSR_EBREAKU, 1);
 		res = register_write_direct(target, GDB_REGNO_DCSR, tmpDcsr);
 		register_read_direct(target, &tmpDcsr, GDB_REGNO_DCSR);
-		if(res == ERROR_OK){			
-		}
-		else{
+		if (res == ERROR_OK) {
+		} else {
 			LOG_DEBUG("[wch] dcsr write fail");
 			assert(false);
 		}
@@ -4106,7 +4089,7 @@ static int write_memory_progbuf(struct target *target, target_addr_t address,
 				}
 
 				/* Turn on autoexec */
-				if(!wchwlink)
+				if (!wchwlink)
 					{	dmi_write(target, DM_ABSTRACTAUTO,
 							1 << DM_ABSTRACTAUTO_AUTOEXECDATA_OFFSET);
 
@@ -4189,13 +4172,12 @@ static int write_memory(struct target *target, target_addr_t address,
 		if(riscvchip==0x03){		
 		  uint64_t actual_value;
 		  uint8_t txbuffer[4];
-		  uint32_t  length;		
 		  if((address >= ramaddr)){
 					LOG_ERROR("THIS  ADDRESSS IS NOT ACCESSIBLE");
 					server_quit();
 					return ERROR_FAIL;																												
 			}										
-			target_addr_t flashaddress=address;
+			//target_addr_t flashaddress=address;
 			if(address < ramaddr)
 			{					
 				if((size*count)==4){						
@@ -4209,14 +4191,14 @@ static int write_memory(struct target *target, target_addr_t address,
 			  			   txbuffer[1]= (((uint32_t)actual_value)&0x0000ff00)>>8;
 			  			   txbuffer[2]= *buffer;
 			  			   txbuffer[3]= *(buffer+1);	  			
-			  		  	   write_memory_progbuf(target, address, 4, 1, &txbuffer);			  		  	 
+			  		  	   write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);			  		  	 
 			  		  	   address=address+2;
 			  		  	   read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );			  		 
 			  		  	   txbuffer[0]= *(buffer+2);
 			  		   	   txbuffer[1]= *(buffer+3);
 			  			   txbuffer[2]= (((uint32_t)actual_value)&0x00ffffff)>>16;
 			  			   txbuffer[3]=((uint32_t)actual_value)>>24;		  		
-			  		  	   write_memory_progbuf(target, address, 4, 1, &txbuffer);
+			  		  	   write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
 			  		  	}	  
 				}else{		
 					if((size*count)!=2){
@@ -4229,7 +4211,7 @@ static int write_memory(struct target *target, target_addr_t address,
 			  			txbuffer[1]= *(buffer+1);
 			  			txbuffer[2]= (((uint32_t)actual_value)&0x00ffffff)>>16;
 			  			txbuffer[3]=((uint32_t)actual_value)>>24;		  		
-			  			write_memory_progbuf(target, address, 4, 1, &txbuffer);
+			  			write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
 			  			}else{
 			  					address=address-2;
 			  					read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );			  				
@@ -4237,7 +4219,7 @@ static int write_memory(struct target *target, target_addr_t address,
 			  			    txbuffer[1]= (((uint32_t)actual_value)&0x0000ff00)>>8;
 			  			    txbuffer[2]= *buffer;
 			  			    txbuffer[3]= *(buffer+1);			  		
-			  				write_memory_progbuf(target, address, 4, 1, &txbuffer);		
+			  				write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);		
 			  			 }	  	
 						}				
 				}
@@ -4614,7 +4596,7 @@ static enum riscv_halt_reason riscv013_halt_reason(struct target *target)
 
 int riscv013_write_debug_buffer(struct target *target, unsigned index, riscv_insn_t data)
 {
-	if(wchwlink){
+	if (wchwlink) {
 		if (dmi_write(target, DM_PROGBUF0 + index, data) != ERROR_OK)
 			return ERROR_FAIL;
 	}
@@ -5037,30 +5019,29 @@ static int maybe_execute_fence_i(struct target *target)
 		return execute_fence(target);
 	return ERROR_OK;
 }
+
 int wlink_cleancache(struct target *target)
 {
-	uint64_t old_dpc_value,new_dpc_value,t6_new,t6_old;
-	uint32_t dmcontrol;
-	RISCV013_INFO(info);
+	uint64_t t6_old;
+	struct riscv_program program;
+	register_read_direct(target, &t6_old, GDB_REGNO_T6);
+	register_write_direct(target, GDB_REGNO_T6, 4);
+	riscv_program_init(&program, target);
+	riscv_program_insert(&program, 0x000f8067);
+	int result = riscv_program_exec(&program, target);
+	(void) result;
+	usleep(1000);
+	register_write_direct(target, GDB_REGNO_T6, t6_old);
 
-	{
-		struct riscv_program program;
-		register_read_direct(target, &t6_old, GDB_REGNO_T6);
-		register_write_direct(target, GDB_REGNO_T6, 4);  
-		riscv_program_init(&program, target);
-		riscv_program_insert(&program, 0x000f8067);      
-		int result = riscv_program_exec(&program, target);
-		usleep(1000);		
-		register_write_direct(target, GDB_REGNO_T6, t6_old);	
-	}
 	return ERROR_OK;
 }
+
 /* Helper Functions. */
 static int riscv013_on_step_or_resume(struct target *target, bool step)
 {
 	if (maybe_execute_fence_i(target) != ERROR_OK)
 		return ERROR_FAIL;
-	if((riscvchip==0x01)){
+	if (riscvchip == 0x01) {
 		wlink_cleancache(target);
 	}
 	/* We want to twiddle some bits in the debug CSR so debugging works. */
@@ -5083,7 +5064,7 @@ static int riscv013_step_or_resume_current_hart(struct target *target,
 		bool step, bool use_hasel)
 {
 	RISCV_INFO(r);
-	
+
 	LOG_DEBUG("resuming hart %d (for step?=%d)", r->current_hartid, step);
 	if (!riscv_is_halted(target)) {
 		LOG_ERROR("Hart %d is not halted!", r->current_hartid);
@@ -5092,19 +5073,19 @@ static int riscv013_step_or_resume_current_hart(struct target *target,
 
 	if (riscv_flush_registers(target) != ERROR_OK)
 		return ERROR_FAIL;
-	
-	
+
+
 	/* Issue the resume command, and then wait for the current hart to resume. */
 	uint32_t dmcontrol = DM_DMCONTROL_DMACTIVE | DM_DMCONTROL_RESUMEREQ;
 	if (use_hasel)
 		dmcontrol |= DM_DMCONTROL_HASEL;
 	dmcontrol = set_hartsel(dmcontrol, r->current_hartid);
 	dmi_write(target, DM_DMCONTROL, dmcontrol);
-	
-	
+
+
 	dmcontrol = set_field(dmcontrol, DM_DMCONTROL_HASEL, 0);
 	dmcontrol = set_field(dmcontrol, DM_DMCONTROL_RESUMEREQ, 0);
-	
+
 	uint32_t dmstatus;
 	for (size_t i = 0; i < 256; ++i) {
 		usleep(10);
@@ -5116,7 +5097,7 @@ static int riscv013_step_or_resume_current_hart(struct target *target,
 			continue;
 
 		dmi_write(target, DM_DMCONTROL, dmcontrol);
-	
+
 		return ERROR_OK;
 	}
 

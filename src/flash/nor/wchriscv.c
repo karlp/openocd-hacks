@@ -23,7 +23,7 @@
 #include <target/algorithm.h>
 extern int wlink_erase(void);
 extern unsigned char riscvchip;
-extern int wlink_reset();
+extern int wlink_reset(void);
 extern void wlink_getromram(uint32_t *rom,uint32_t *ram);
 extern int wlink_write(const uint8_t *buffer, uint32_t offset, uint32_t count);
 extern int noloadflag;
@@ -68,11 +68,12 @@ FLASH_BANK_COMMAND_HANDLER(ch32vx_flash_bank_command)
 	return ERROR_OK;
 }
 
-static int ch32vx_erase(struct flash_bank *bank, int first, int last)
+static int ch32vx_erase(struct flash_bank *bank, unsigned int first, unsigned int last)
 {	
 	 
-	if(noloadflag)
+	if (noloadflag){
 		return ERROR_OK;
+	}
 	wlink_reset();
 	int ret = wlink_erase();
 	target_halt(bank->target);
@@ -128,7 +129,6 @@ static int ch32vx_probe(struct flash_bank *bank)
 	uint32_t ram=0;
 	int page_size;
 	uint32_t base_address = 0x00000000;
-	uint32_t rid = 0;
 	ch32vx_info->probed = 0;
 	/* read ch32 device id register */
 	int retval = ch32vx_get_device_id(bank, &device_id);
@@ -140,7 +140,7 @@ static int ch32vx_probe(struct flash_bank *bank)
 	ch32vx_info->ppage_size = 4;
 	/* get flash size from target. */
 	retval = ch32vx_get_flash_size(bank, &flash_size_in_kb);
-	if(flash_size_in_kb)
+	if (flash_size_in_kb)
 		LOG_INFO("flash size = %dkbytes", flash_size_in_kb);
 	else
 		flash_size_in_kb=delfault_max_flash_size;
