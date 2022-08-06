@@ -13,7 +13,7 @@
  *   You should have received a copy of the GNU General Public License     *
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
- 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -74,12 +74,12 @@
 #define FLASH_OBL_LAUNCH	(1 << 13)	/* except ch32f1x series */
 
 
-#define FLASH_PAGE_PROGRAM	  0x00010000	
-#define FLASH_PAGE_ERASE		  0x00020000	
-#define FLASH_STD_PAGE_ERASE  0x00000002  
-#define FLASH_STD_PAGE_PRG    0x00000001  
-#define FLASH_BUF_LOAD			  0x00040000	
-#define FLASH_BUF_RTS				  0x00080000	
+#define FLASH_PAGE_PROGRAM	  0x00010000
+#define FLASH_PAGE_ERASE		  0x00020000
+#define FLASH_STD_PAGE_ERASE  0x00000002
+#define FLASH_STD_PAGE_PRG    0x00000001
+#define FLASH_BUF_LOAD			  0x00040000
+#define FLASH_BUF_RTS				  0x00080000
 
 
 
@@ -222,8 +222,8 @@ static int ch32x_wait_status_busy(struct flash_bank *bank, int timeout)
 
 static int ch32x_check_operation_supported(struct flash_bank *bank)
 {
-	
-	
+
+
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 
 	/* if we have a dual flash bank device then
@@ -238,8 +238,8 @@ static int ch32x_check_operation_supported(struct flash_bank *bank)
 
 static int ch32x_read_options(struct flash_bank *bank)
 {
-	
-	
+
+
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 	struct target *target = bank->target;
 	uint32_t option_bytes;
@@ -278,8 +278,8 @@ static int ch32x_read_options(struct flash_bank *bank)
 
 static int ch32x_erase_options(struct flash_bank *bank)
 {
-	
-	
+
+
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 	struct target *target = bank->target;
 
@@ -324,8 +324,8 @@ static int ch32x_erase_options(struct flash_bank *bank)
 
 static int ch32x_write_options(struct flash_bank *bank)
 {
-	
-	
+
+
 	struct ch32x_flash_bank *ch32x_info = NULL;
 	struct target *target = bank->target;
 
@@ -379,7 +379,7 @@ static int ch32x_write_options(struct flash_bank *bank)
 
 static int ch32x_protect_check(struct flash_bank *bank)
 {
-	
+
 
 	struct target *target = bank->target;
 	uint32_t protection;
@@ -395,29 +395,30 @@ static int ch32x_protect_check(struct flash_bank *bank)
 	if (retval != ERROR_OK)
 		return retval;
 
-	for (int i = 0; i < bank->num_prot_blocks; i++)
+	for (unsigned int i = 0; i < bank->num_prot_blocks; i++)
 		bank->prot_blocks[i].is_protected = (protection & (1 << i)) ? 0 : 1;
 
 	return ERROR_OK;
 }
 
-static int ch32x_erase(struct flash_bank *bank, int first, int last)
-{	
- if(armchip)
- {
-	if(noloadflag)
-		return ERROR_OK;
-				
-	    int ret=wlink_armerase();
-		
+static int ch32x_erase(struct flash_bank *bank, unsigned int first, unsigned int last)
+{
+	// TODO: This function doesn't erase anything on !arm. That's probably bad.
+	if (armchip) {
+		if (noloadflag) {
+			return ERROR_OK;
+		}
+
+	    int ret = wlink_armerase();
 		return ret;
-			
- }	
+
+	 }
+	 return ERROR_OK;
 }
 
-static int ch32x_protect(struct flash_bank *bank, int set, int first, int last)
+static int ch32x_protect(struct flash_bank *bank, int set, unsigned int first, unsigned int last)
 {
-	
+
 	struct target *target = bank->target;
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 
@@ -436,7 +437,7 @@ static int ch32x_protect(struct flash_bank *bank, int set, int first, int last)
 		return retval;
 	}
 
-	for (int i = first; i <= last; i++) {
+	for (unsigned int i = first; i <= last; i++) {
 		if (set)
 			ch32x_info->option_bytes.protection &= ~(1 << i);
 		else
@@ -455,13 +456,16 @@ static int ch32x_write_block(struct flash_bank *bank, const uint8_t *buffer,
 static int ch32x_write(struct flash_bank *bank, const uint8_t *buffer,
 		uint32_t offset, uint32_t count)
 {
- if(armchip)
- {
-		if(noloadflag)
-				return ERROR_OK;			
-		int ret=wlink_armwrite(buffer,bank->base + offset,count);				
-		return ret;				
- }
+	// TODO: This doesn't write anything for !arm. Is that intended?
+	if (armchip) {
+		if (noloadflag) {
+			return ERROR_OK;
+		}
+		int ret=wlink_armwrite(buffer,bank->base + offset,count);
+		return ret;
+	}
+
+	return ERROR_OK;
 
 }
 
@@ -469,15 +473,14 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
 {
 	/* This check the device CPUID core register to detect
 	 * the M0 from the M3 devices. */
- 
+
 	struct target *target = bank->target;
-	uint32_t cpuid, device_id_register = 0;
     uint32_t testid=0;
     uint32_t tmp,tmp1,tmp2=0;
 	uint8_t user_cfg,config;
 	target_read_u8(target, 0x1ffff802, &user_cfg);
 	config=user_cfg>>6;
-	target_read_u32(target, 0x1ffff884, &testid);			
+	target_read_u32(target, 0x1ffff884, &testid);
   	if(((testid>>16)==0x2000)||((testid>>16)==0x1000)||((testid>>16)==0x3000)){
   		target_read_u32(target, 0x1ffff7e8, &tmp);
   		target_read_u32(target, 0x1ffff8a0, &tmp1);
@@ -489,15 +492,15 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
   				wlink_sendchip(config);
   				return ERROR_OK;
   		}
-  	
+
   	}
   	target_read_u32(target, 0xe000edfc, &testid);
- 
+
   	target_read_u32(target, 0xe000edf0, &testid);
-  	
+
   	target_read_u32(target, 0x1ffff704, &testid);
-  	
-  	if(((testid>>20)==0x203)||((testid>>20)==0x205)||((testid>>20)==0x207)||((testid>>20)==0x208)){	
+
+  	if(((testid>>20)==0x203)||((testid>>20)==0x205)||((testid>>20)==0x207)||((testid>>20)==0x208)){
   		 	armchip=2;
   			*device_id=0x20000410;
   			wlink_sendchip(config);
@@ -508,11 +511,15 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
 }
 
 static int ch32x_get_flash_size(struct flash_bank *bank, uint16_t *flash_size_in_kb)
-{	
+{
 	struct target *target = bank->target;
-	uint32_t cpuid, flash_size_reg;
-    uint32_t temp;
-	int retval = target_read_u32(target, 0x1ffff7e0, flash_size_in_kb);	
+	// FIXME: this is almost certainly an actual bug and I'm applying pain killer
+	// to it.
+	// target_read_u32 reads 32 bits and stores it in the pointee of the final arg.
+	// The final argument here is a uint16_t as it is in the caller. I'm going to
+	// change this to read 16 bits, but this could cause synchronization issues.
+	// Orig: int retval = target_read_u32(target, 0x1ffff7e0, flash_size_in_kb);
+	int retval = target_read_u16(target, 0x1ffff7e0, flash_size_in_kb);
 	if (retval != ERROR_OK)
 		return retval;
 
@@ -520,28 +527,26 @@ static int ch32x_get_flash_size(struct flash_bank *bank, uint16_t *flash_size_in
 }
 
 static int ch32x_probe(struct flash_bank *bank)
-{	
+{
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 	uint16_t flash_size_in_kb;
 	uint16_t max_flash_size_in_kb;
 	uint32_t device_id;
 	int page_size;
 	uint32_t base_address = 0x08000000;
-    uint32_t rid=0;
 	ch32x_info->probed = 0;
 	ch32x_info->register_base = FLASH_REG_BASE_B0;
 	ch32x_info->user_data_offset = 10;
 	ch32x_info->option_offset = 0;
 
 	/* default factory read protection level 0 */
-	ch32x_info->default_rdp = 0xA5;	
-	
+	ch32x_info->default_rdp = 0xA5;
+
   int retval = ch32x_get_device_id(bank, &device_id);
 	if (retval != ERROR_OK)
 		return retval;
-	
+
 	LOG_INFO("device id = 0x%08" PRIx32 "", device_id);
-	rid=device_id & 0xfff ;
 	/* set page size, protection granularity and max flash size depending on family */
 	switch (device_id & 0xfff) {
 	case 0x410: /* medium density */
@@ -549,7 +554,7 @@ static int ch32x_probe(struct flash_bank *bank)
 		ch32x_info->ppage_size = 4;
 		max_flash_size_in_kb = 512;
 		break;
-	
+
 	default:
 		LOG_WARNING("Cannot identify target as a ch32 family.");
 		return ERROR_FAIL;
@@ -632,7 +637,7 @@ static int ch32x_probe(struct flash_bank *bank)
 
 static int ch32x_auto_probe(struct flash_bank *bank)
 {
-	
+
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 	if (ch32x_info->probed)
 		return ERROR_OK;
@@ -646,7 +651,7 @@ COMMAND_HANDLER(ch32x_handle_part_id_command)
 }
 #endif
 
-static int get_ch32x_info(struct flash_bank *bank, char *buf, int buf_size)
+static int get_ch32x_info(struct flash_bank *bank, struct command_invocation *buf_size)
 {
 
 
@@ -945,7 +950,7 @@ COMMAND_HANDLER(ch32x_handle_options_load_command)
 
 static int ch32x_mass_erase(struct flash_bank *bank)
 {
-	
+
 	struct target *target = bank->target;
 
 	if (target->state != TARGET_HALTED) {
@@ -983,8 +988,6 @@ static int ch32x_mass_erase(struct flash_bank *bank)
 
 COMMAND_HANDLER(ch32x_handle_mass_erase_command)
 {
-	int i;
-
 	if (CMD_ARGC < 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -996,7 +999,7 @@ COMMAND_HANDLER(ch32x_handle_mass_erase_command)
 	retval = ch32x_mass_erase(bank);
 	if (retval == ERROR_OK) {
 		/* set all sectors as erased */
-		for (i = 0; i < bank->num_sectors; i++)
+		for (unsigned i = 0; i < bank->num_sectors; i++)
 			bank->sectors[i].is_erased = 1;
 
 		command_print(CMD, "ch32x mass erase complete");

@@ -62,7 +62,7 @@
 
 
 extern unsigned char riscvchip;
-extern int wlink_reset();
+extern int wlink_reset(void);
 extern int wlink_quitreset(void);
 extern int wlink_verify(unsigned long length, unsigned char *buffer);
 static int target_read_buffer_default(struct target *target, target_addr_t address,
@@ -3349,10 +3349,10 @@ COMMAND_HANDLER(handle_reset_command)
 
 	return target_process_reset(CMD, reset_mode);
 }
+
 COMMAND_HANDLER(handle_wlink_reset_resume_command)
 {
-	
-	wlink_quitreset();
+	return wlink_quitreset();
 }
 
 COMMAND_HANDLER(handle_resume_command)
@@ -3818,13 +3818,12 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 	int retval;
 	uint32_t checksum = 0;
 	uint32_t mem_checksum = 0;
-	int i;
 	struct image image;
 
 	struct target *target = get_current_target(CMD_CTX);
 	if((riscvchip==0x03)||(riscvchip==0x02)||(riscvchip==0x01)){
 		wlink_reset();
-		
+
 	}
 	if (CMD_ARGC < 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
@@ -3856,44 +3855,39 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 	image_size = 0x0;
 	int diffs = 0;
 	retval = ERROR_OK;
-	if(riscvchip){
-		uint32_t  addr=0;
+	if(riscvchip) {
 		unsigned long length;
         uint8_t *buffer1;
 		uint8_t *buffer2;
 
 		length=image.sections[image.num_sections-1].size + image.sections[image.num_sections-1].base_address;
-		
-		
-		buffer2=malloc(length+256);
+
+
+		buffer2 = malloc(length+256);
 		memset(buffer2,0xff,length);
-		for (i = 0; i < image.num_sections; i++) {
+		for (unsigned i = 0; i < image.num_sections; i++) {
 
 			buffer1 = malloc(image.sections[i].size);
 			retval = image_read_section(&image, i, 0x0, image.sections[i].size, buffer1, &buf_cnt);
 
-			for(int j=0;j<buf_cnt;j++){
-			buffer2[j+image.sections[i].base_address]=buffer1[j];
-
+			for(unsigned long j = 0;j < buf_cnt;j++){
+				buffer2[j+image.sections[i].base_address] = buffer1[j];
 			}
 	    }
-		if(length%64){
-			
-			for(int j=0;j<64-length%64;j++)
-			{
-				buffer2[length+j]=0xff;
+		if (length % 64) {
+			for(unsigned long j = 0;j < 64-length%64; j++) {
+				buffer2[length+j] = 0xff;
 			}
-				length+= 64-length%64;
-			} 
-		
+			length += 64-length%64;
+		}
+
 		int ret=wlink_verify( length-image.sections[0].base_address, &buffer2[image.sections[0].base_address]);
-	
+
 	free(buffer2);
 	free(buffer1);
 	image_close(&image);
 	return ret;
-	
-}
+	}
 
 	for (unsigned int i = 0; i < image.num_sections; i++) {
 		buffer = malloc(image.sections[i].size);
@@ -3915,7 +3909,7 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 			if (retval != ERROR_OK) {
 				free(buffer);
 				break;
-			}		 
+			}
 			retval = target_checksum_memory(target, image.sections[i].base_address, buf_cnt, &mem_checksum);
 			if (retval != ERROR_OK) {
 				free(buffer);
@@ -3928,7 +3922,7 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 				goto done;
 			}
 			if (checksum != mem_checksum) {
-				
+
 				/* failed crc checksum, fall back to a binary compare */
 
 				uint8_t *data;

@@ -38,6 +38,7 @@
 #include "config.h"
 #endif
 
+
 #include <target/breakpoints.h>
 #include <target/target_request.h>
 #include <target/register.h>
@@ -51,6 +52,7 @@
 #include <jtag/jtag.h>
 #include "rtos/rtos.h"
 #include "target/smp.h"
+#include <jtag/drivers/cmsis_dap.h> /* for struct cmsis_dap */
 
 /**
  * @file
@@ -1731,7 +1733,7 @@ static int gdb_breakpoint_watchpoint_packet(struct connection *connection,
 				p=p->next;
 			}
 			if(len>2)
-				type=0;		
+				type=0;
 		}
 		if(riscvchip==1||riscvchip==2||riscvchip==3 ||((uint16_t)chip_type) ==0x0510){
 			type=0;
@@ -3164,7 +3166,7 @@ static int gdb_v_packet(struct connection *connection,
 		}else if(armchip){
 			wlink_armquitreset(cmsis_dap_handle);
 			}
-	} 
+	}
 
 	if (strncmp(packet, "vCont", 5) == 0) {
 		bool handled;
@@ -3201,7 +3203,7 @@ static int gdb_v_packet(struct connection *connection,
 		unsigned long length;
 		if(wchwlink){
 			// if(riscvchip==1||riscvchip==6)
-			// {	
+			// {
 				gdb_put_packet(connection, "OK", 2);
 				return ERROR_OK;
 			// }
@@ -3437,7 +3439,7 @@ static int gdb_input_inner(struct connection *connection)
 		/* terminate with zero */
 		gdb_packet_buffer[packet_size] = '\0';
 
-		// if(1){	
+		// if(1){
 		// 	char buf[64];
 		// 	unsigned offset = 0;
 		// 	int i = 0;
@@ -3586,7 +3588,7 @@ static int gdb_input_inner(struct connection *connection)
 					if (retval != ERROR_OK)
 						return retval;
 					break;
-				case 'k':					
+				case 'k':
 					if (gdb_con->extended_protocol) {
 						gdb_con->attached = false;
 						break;

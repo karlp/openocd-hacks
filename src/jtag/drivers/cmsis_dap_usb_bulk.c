@@ -31,7 +31,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifdef HAVE_CONFIG_H	
+#ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
@@ -105,7 +105,7 @@ static int cmsis_dap_usb_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 
 		struct libusb_device_handle *dev_handle = NULL;
 		err = libusb_open(dev, &dev_handle);
-		
+
 		if (err) {
 			/* It's to be expected that most USB devices can't be opened
 			 * so only report an error if it was explicitly selected
@@ -119,7 +119,7 @@ static int cmsis_dap_usb_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 			}
 			continue;
 		}
-		
+
 		/* Match serial number */
 
 		bool serial_match = false;
@@ -329,7 +329,7 @@ static int cmsis_dap_usb_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 
 			LOG_INFO("Using CMSIS-DAPv2 interface with VID:PID=0x%04x:0x%04x, serial=%s",
 					dev_desc.idVendor, dev_desc.idProduct, dev_serial);
-		    
+
 			int current_config;
 			err = libusb_get_configuration(dev_handle, &current_config);
 			if (err) {
@@ -369,7 +369,7 @@ static int cmsis_dap_usb_open(struct cmsis_dap *dap, uint16_t vids[], uint16_t p
 			dap->bdata->ep_out = ep_out;
 			dap->bdata->ep_in = ep_in;
 			dap->bdata->interface = interface_num;
-			
+
 			dap->packet_buffer = malloc(dap->packet_buffer_size);
 			if (!dap->packet_buffer) {
 				LOG_ERROR("unable to allocate memory");
@@ -478,7 +478,7 @@ static const uint32_t flash_code1[] = {
     0x46086108, 0xF0406900, 0x61080040, 0xF64AE003, 0x496420AA, 0x48606008, 0xF00068C0, 0x28000001,
     0x485DD1F5, 0xF0206900, 0x495B0004, 0x20006108, 0xB5084770, 0x20004601, 0x48579000, 0xF0406900,
     0x4A550002, 0x20016110, 0xBF009000, 0x61414852, 0xF0406900, 0x4A500040, 0xE0036110, 0x20AAF64A,
-    0x60104A50, 0x68C0484C, 0x0001F000, 0xD1F52800, 0x0000F89D, 0xB2C01E40, 0x28009000, 0x4846D1E6, 
+    0x60104A50, 0x68C0484C, 0x0001F000, 0xD1F52800, 0x0000F89D, 0xB2C01E40, 0x28009000, 0x4846D1E6,
     0xF0206900, 0x4A440002, 0x20006110, 0xB5F0BD08, 0x460D4604, 0x46232608, 0x60086828, 0x40024842,
     0x2200F442, 0x6102483C, 0x483BBF00, 0xF00068C0, 0x28000001, 0xF422D1F9, 0xBF002200, 0x6018C901,
     0x6058C901, 0x6098C901, 0x60D8C901, 0x2280F442, 0x61024831, 0xBF003310, 0x68C0482F, 0x0001F000,
@@ -486,9 +486,9 @@ static const uint32_t flash_code1[] = {
     0x0240F022, 0x4824BF00, 0xF00068C0, 0x28000001, 0x4821D1F9, 0xF00068C0, 0xB1600014, 0x68C0481E,
     0x0014F040, 0x60F84F1C, 0x20FFF240, 0x46384002, 0x20016102, 0x2000BDF0, 0xE92DE7FC, 0x460641F8,
     0x4615460F, 0x0800F04F, 0xF1079600, 0xF3C0007F, 0x481118C7, 0xF4446904, 0x61043480, 0x4622BF00,
-    0x98004629, 0xFF93F7FF, 0x2001B110, 0x81F8E8BD, 0x30809800, 0x35809000, 0x0001F1A8, 0xF1B0B2C0,  
+    0x98004629, 0xFF93F7FF, 0x2001B110, 0x81F8E8BD, 0x30809800, 0x35809000, 0x0001F1A8, 0xF1B0B2C0,
     0xD1EC0800, 0x20FFF240, 0x48034004, 0x20006104, 0x0000E7EC, 0x00000004, 0x40022000, 0x45670123,
-    0xCDEF89AB, 0x40003000, 0x000102FF, 0x00000000, 0x00000000, 
+    0xCDEF89AB, 0x40003000, 0x000102FF, 0x00000000, 0x00000000,
 };
 
 uint32_t program_code1[] = {
@@ -556,8 +556,8 @@ void wlink_sendchip(uint8_t config)
 	buffer_code[1]=0x11;
 	buffer_code[2]=0x01;
 	libusb_bulk_transfer(wlink_dev_handle, 0x02,buffer_code,4,&transferred,timeout);
-	libusb_bulk_transfer(wlink_dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);	
-	chip_type=((unsigned int)buffer_rcode[19]) + (((unsigned int)buffer_rcode[18])<<8) + (((unsigned int)buffer_rcode[17])<<16) +(((unsigned int) buffer_rcode[16])<<24);	
+	libusb_bulk_transfer(wlink_dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);
+	chip_type=((unsigned int)buffer_rcode[19]) + (((unsigned int)buffer_rcode[18])<<8) + (((unsigned int)buffer_rcode[17])<<16) +(((unsigned int) buffer_rcode[16])<<24);
 	bool type_A=false;
 	bool type_B=false;
 	if(chip_type==0x20700418 ||chip_type==0x20300414 ||chip_type==0x20310414 )
@@ -625,10 +625,10 @@ void wlink_sendchip(uint8_t config)
 	if((rom!=0) && (ram!=0))
 		LOG_INFO("ROM %d kbytes RAM %d kbytes" ,rom,ram);
 
-	
+
 }
 void wlink_armversion(struct cmsis_dap *dap){
-	
+
 	int transferred = 0;
 	unsigned char txbuf[4]={0x81,0x0d,0x1,0x1};
 	unsigned char rxbuf[20];
@@ -653,7 +653,7 @@ void wlink_armversion(struct cmsis_dap *dap){
 			wlink_name="WCH-LinkB  mod:ARM";
 			break;
 		default:
-			LOG_ERROR("unknow WCH-LINK ");	
+			LOG_ERROR("unknow WCH-LINK ");
 			break;
 		}
 	LOG_INFO("%s version %d.%d ",wlink_name, rxbuf[3], rxbuf[4]);
@@ -668,7 +668,7 @@ int wlink_armcheckprotect(void)
 	if (armchip == 1)
 		buffer_clk[3] = 0x04;
 	if (armchip == 2)
-		buffer_clk[3] = 0x08;	
+		buffer_clk[3] = 0x08;
 	libusb_bulk_transfer(wlink_dev_handle, 0x02,buffer_clk,sizeof(buffer_code),&transferred,timeout);
 	libusb_bulk_transfer(wlink_dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);
 	// hid_write(wlink_dev_handle, buffer_clk, 65);
@@ -686,6 +686,7 @@ int wlink_armcheckprotect(void)
 		}
 		return ERROR_OK;
 	}
+  return 0;
 }
 int wlink_armerase(void)
 {
@@ -693,7 +694,7 @@ int wlink_armerase(void)
 	int transferred=0;
 	uint8_t buffer_rcode[4];
 	uint32_t *comprogram = NULL;
-	uint32_t *comflash = NULL;
+	const uint32_t *comflash = NULL;
 	if (armchip == 1)
 	{
 		comprogram = program_code1;
@@ -705,8 +706,6 @@ int wlink_armerase(void)
 		comprogram = program_code2;
 		comflash = flash_code2;
 	}
-	uint8_t i = 0;
-	uint8_t *flashcode = (uint8_t *)comflash;
 
 	int h = *(comprogram + 10);
 
@@ -748,7 +747,7 @@ int wlink_armerase(void)
 int wlink_armwrite(const uint8_t *buffer, uint32_t offset, uint32_t count)
 {
 	int transferred = 0;
-	uint8_t *addr = &offset;
+	uint8_t *addr = (uint8_t *) &offset;
 	uint8_t flash_write[] = {0x81, 0x02, 0x01, 0x02};
 	uint8_t buffer_rcode[4];
 	uint8_t i = 0;
@@ -765,11 +764,11 @@ int wlink_armwrite(const uint8_t *buffer, uint32_t offset, uint32_t count)
 	}
 
 	uint8_t address[] = { 0x81, 0x01, 0x08, *(addr + 3), *(addr + 2), *(addr + 1), *addr,(count >> 24) & 0xff, (count >> 16) & 0xff, (count >> 8) & 0xff, count & 0xff};
-	// hid_write(wlink_dev_handle, address, 65); 
+	// hid_write(wlink_dev_handle, address, 65);
 	// hid_read_timeout(wlink_dev_handle, buffer_rcode, 65, beytime);
 	// hid_write(wlink_dev_handle, countsize, 65);
-	// hid_read_timeout(wlink_dev_handle, buffer_rcode, 65, beytime); 
-	// hid_write(wlink_dev_handle, flash_write, 65); 
+	// hid_read_timeout(wlink_dev_handle, buffer_rcode, 65, beytime);
+	// hid_write(wlink_dev_handle, flash_write, 65);
 	// int retval = hid_read_timeout(wlink_dev_handle, buffer_rcode, 65, beytime);
 	libusb_bulk_transfer(wlink_dev_handle, 0x02,address,sizeof(address),&transferred,timeout);
 	libusb_bulk_transfer(wlink_dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);
@@ -813,6 +812,7 @@ void wlink_armquitreset(struct cmsis_dap *dap)
 	// hid_read(wlink_dev_handle, buffer_rcode, 65);
     libusb_bulk_transfer(dap->bdata->dev_handle, 0x02,resetbuffer,sizeof(resetbuffer),&transferred,timeout);
 	int ret=libusb_bulk_transfer(dap->bdata->dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);
+	(void) ret;
 
 
 }
