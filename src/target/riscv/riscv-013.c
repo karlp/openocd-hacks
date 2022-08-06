@@ -584,7 +584,7 @@ static int wlink_dmi_op_timeout(struct target *target, unsigned long *data_in,
 		if (dmi_op == DMI_OP_READ) {
 			result =
 				DMI_OP(0, (unsigned char) address, 0, (unsigned char) dmi_op,
-					(unsigned char *) &address_in, data_in,&recvOP);
+					(unsigned char *) &address_in, data_in, &recvOP);
 			if (!result) {
 				LOG_ERROR("failed %s at 0x%x, status=%d", op_name, address, status);
 				LOG_ERROR("Maybe the device has been removed");
@@ -4368,7 +4368,7 @@ static int write_memory(struct target *target, target_addr_t address,
 
 			/*write_flash_data(target, flashaddress, size, count, buffer); */
 		}
-		if ((riscvchip == 0x01) || (riscvchip == 0x02) || (riscvchip == 0x06)||
+		if ((riscvchip == 0x01) || (riscvchip == 0x02) || (riscvchip == 0x06) ||
 			(riscvchip == 0x05))
 			write_flash_data(target, address, size, count, buffer);
 		return ERROR_OK;
