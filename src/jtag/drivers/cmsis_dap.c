@@ -313,7 +313,7 @@ static int cmsis_dap_open(void)
 	cmsis_dap_handle = dap;
 
    wlink_armversion(dap);
- 
+
 
 	return ERROR_OK;
 }

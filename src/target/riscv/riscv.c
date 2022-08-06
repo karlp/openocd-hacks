@@ -589,7 +589,7 @@ static int maybe_add_trigger_t1(struct target *target,
 
 	return ERROR_OK;
 }
-extern unsigned char riscvchip; 
+extern unsigned char riscvchip;
 static int maybe_add_trigger_t2(struct target *target,
 		struct trigger *trigger, uint64_t tdata1)
 {

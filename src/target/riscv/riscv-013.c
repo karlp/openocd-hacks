@@ -31,14 +31,14 @@
 #define RVFNIC_CTRLR 0xE000E048
 #define NVIC_KEY 0xBEEF0000
 
-extern unsigned char	DMI_OP( 
-	unsigned long	iIndex,  
-	unsigned char	iAddr,       
+extern unsigned char	DMI_OP(
+	unsigned long	iIndex,
+	unsigned char	iAddr,
 	unsigned long	iData,
-	unsigned char	iOP,       
-	unsigned char*	oAddr,       
-	unsigned long*	oData,      
-	unsigned char*  oOP );  
+	unsigned char	iOP,
+	unsigned char*	oAddr,
+	unsigned long*	oData,
+	unsigned char*  oOP );
 extern unsigned char WriteNonFullPage(unsigned long iaddr,
 									 unsigned char* ibuff,
 									 unsigned long ilen);
@@ -138,17 +138,6 @@ typedef enum slot {
 #define CMDERR_EXCEPTION		3
 #define CMDERR_HALT_RESUME		4
 #define CMDERR_OTHER			7
-
-/*** Info about the core being debugged. ***/
-
-struct trigger {
-	uint64_t address;
-	uint32_t length;
-	uint64_t mask;
-	uint64_t value;
-	bool read, write, execute;
-	int unique_id;
-};
 
 typedef enum {
 	YNM_MAYBE,
@@ -265,30 +254,30 @@ static void flush_flash_data(struct target *target)
 	uint64_t a3;
 	uint64_t a4;
 	RISCV013_INFO(info);
-	//write 
+	//write
 	if(info->flash_len)
-	{	
-		execute_fence(target);					
-	    register_read_direct(target, &a0, GDB_REGNO_A0);					
+	{
+		execute_fence(target);
+	    register_read_direct(target, &a0, GDB_REGNO_A0);
 		// register_read_direct(target, &s0, GDB_REGNO_S0);
 		// register_read_direct(target, &ra, GDB_REGNO_RA);
 		// register_read_direct(target, &sp, GDB_REGNO_SP);
-		// register_read_direct(target, &gp, GDB_REGNO_GP);		
+		// register_read_direct(target, &gp, GDB_REGNO_GP);
 		// register_read_direct(target, &t0, GDB_REGNO_T0);
 		// register_read_direct(target, &t1, GDB_REGNO_T1);
 	    // register_read_direct(target, &t2, GDB_REGNO_T2);
-		// register_read_direct(target, &t3, GDB_REGNO_T3);		
-		register_read_direct(target, &s1, GDB_REGNO_S1); 
+		// register_read_direct(target, &t3, GDB_REGNO_T3);
+		register_read_direct(target, &s1, GDB_REGNO_S1);
 		register_read_direct(target, &a1, GDB_REGNO_A1);
 		register_read_direct(target, &a2, GDB_REGNO_A2);
 		register_read_direct(target, &a3, GDB_REGNO_A3);
-		register_read_direct(target, &a4, GDB_REGNO_A4);	
-		WriteNonFullPage(info->flash_start_addr,info->flash_data,info->flash_len);	
-	    register_write_direct(target, GDB_REGNO_A0, a0);	
+		register_read_direct(target, &a4, GDB_REGNO_A4);
+		WriteNonFullPage(info->flash_start_addr,info->flash_data,info->flash_len);
+	    register_write_direct(target, GDB_REGNO_A0, a0);
 		// register_write_direct(target, GDB_REGNO_S0, s0);
 		// register_write_direct(target, GDB_REGNO_RA, ra);
 		// register_write_direct(target, GDB_REGNO_SP, sp);
-		// register_write_direct(target, GDB_REGNO_GP, gp);		
+		// register_write_direct(target, GDB_REGNO_GP, gp);
 		// register_write_direct(target, GDB_REGNO_T0, t0);
 		// register_write_direct(target, GDB_REGNO_T1, t1);
 		// register_write_direct(target, GDB_REGNO_T2, t2);
@@ -297,7 +286,7 @@ static void flush_flash_data(struct target *target)
 		register_write_direct(target, GDB_REGNO_A1, a1);
 		register_write_direct(target, GDB_REGNO_A2, a2);
 		register_write_direct(target, GDB_REGNO_A3, a3);
-		register_write_direct(target, GDB_REGNO_A4, a4);		
+		register_write_direct(target, GDB_REGNO_A4, a4);
 	info->flash_start_addr = 0;
 	info->flash_len = 0;
 	info->flash_offset = 0;
@@ -602,7 +591,7 @@ static int wlink_dmi_op_timeout(struct target *target, unsigned long *data_in,
 					LOG_ERROR("Maybe the device has been removed");
 					server_quit();
 					return ERROR_FAIL;
-				}		
+				}
 		}else{
 			DMI_OP(0, (unsigned char	)address, data_out, (unsigned char	)dmi_op, (unsigned char*)&address_in, &recvData,&recvOP);
 		}
@@ -874,7 +863,7 @@ int dmstatus_read_timeout(struct target *target, uint32_t *dmstatus,
 		return result;
 	int dmstatus_version = get_field(*dmstatus, DM_DMSTATUS_VERSION);
 	if (dmstatus_version != 2 && dmstatus_version != 3) {
-		
+
 		LOG_ERROR("OpenOCD only supports Debug Module version 2 (0.13) and 3 (1.0), not "
 				"%d (dmstatus=0x%x). This error might be caused by a JTAG "
 				"signal issue. Try reducing the JTAG clock speed.",
@@ -4168,72 +4157,72 @@ static int write_memory(struct target *target, target_addr_t address,
 		return ERROR_FAIL;
 	}
 	if(address < 0x20000000)
-	{	
-		if(riscvchip==0x03){		
+	{
+		if(riscvchip==0x03){
 		  uint64_t actual_value;
 		  uint8_t txbuffer[4];
 		  if((address >= ramaddr)){
 					LOG_ERROR("THIS  ADDRESSS IS NOT ACCESSIBLE");
 					server_quit();
-					return ERROR_FAIL;																												
-			}										
+					return ERROR_FAIL;
+			}
 			//target_addr_t flashaddress=address;
 			if(address < ramaddr)
-			{					
-				if((size*count)==4){						
+			{
+				if((size*count)==4){
 			  		  if(address%4==0){
-			  		  	read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );		  			
-			  		  	write_memory_progbuf(target, address, 4, 1, buffer);	  	
-			  		  }else{	
+			  		  	read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );
+			  		  	write_memory_progbuf(target, address, 4, 1, buffer);
+			  		  }else{
 			  		  	   address=address-2;
-			  			   read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );		  			
+			  			   read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );
 			  		  	   txbuffer[0]= ((uint32_t)actual_value)&0x000000ff;
 			  			   txbuffer[1]= (((uint32_t)actual_value)&0x0000ff00)>>8;
 			  			   txbuffer[2]= *buffer;
-			  			   txbuffer[3]= *(buffer+1);	  			
-			  		  	   write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);			  		  	 
+			  			   txbuffer[3]= *(buffer+1);
+			  		  	   write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
 			  		  	   address=address+2;
-			  		  	   read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );			  		 
+			  		  	   read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );
 			  		  	   txbuffer[0]= *(buffer+2);
 			  		   	   txbuffer[1]= *(buffer+3);
 			  			   txbuffer[2]= (((uint32_t)actual_value)&0x00ffffff)>>16;
-			  			   txbuffer[3]=((uint32_t)actual_value)>>24;		  		
+			  			   txbuffer[3]=((uint32_t)actual_value)>>24;
 			  		  	   write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
-			  		  	}	  
-				}else{		
+			  		  	}
+				}else{
 					if((size*count)!=2){
-						
-			  		}else{			  			
-			  			read_memory_progbuf_one(target, 0x0000, 4, (uint8_t*)&actual_value );				  
+
+			  		}else{
+			  			read_memory_progbuf_one(target, 0x0000, 4, (uint8_t*)&actual_value );
 			  			if(address%4==0){
-			  			read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );			  		
+			  			read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );
 			  			txbuffer[0]= *buffer;
 			  			txbuffer[1]= *(buffer+1);
 			  			txbuffer[2]= (((uint32_t)actual_value)&0x00ffffff)>>16;
-			  			txbuffer[3]=((uint32_t)actual_value)>>24;		  		
+			  			txbuffer[3]=((uint32_t)actual_value)>>24;
 			  			write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
 			  			}else{
 			  					address=address-2;
-			  					read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );			  				
+			  					read_memory_progbuf_one(target, address, 4, (uint8_t*)&actual_value );
 			  			    txbuffer[0]= ((uint32_t)actual_value)&0x000000ff;
 			  			    txbuffer[1]= (((uint32_t)actual_value)&0x0000ff00)>>8;
 			  			    txbuffer[2]= *buffer;
-			  			    txbuffer[3]= *(buffer+1);			  		
-			  				write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);		
-			  			 }	  	
-						}				
+			  			    txbuffer[3]= *(buffer+1);
+			  				write_memory_progbuf(target, address, 4, 1, (uint8_t*)&txbuffer);
+			  			 }
+						}
 				}
 			}
-								
-			//write_flash_data(target, flashaddress, size, count, buffer);			
-		}				
+
+			//write_flash_data(target, flashaddress, size, count, buffer);
+		}
 		if((riscvchip==0x01)||(riscvchip==0x02)||(riscvchip==0x06)||(riscvchip==0x05))
-		{			
-			write_flash_data(target, address, size, count, buffer);			
+		{
+			write_flash_data(target, address, size, count, buffer);
 		}
 		return ERROR_OK;
 	}else{
-	
+
 	int ret = ERROR_FAIL;
 	RISCV_INFO(r);
 	RISCV013_INFO(info);

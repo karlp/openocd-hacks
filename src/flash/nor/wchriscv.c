@@ -69,8 +69,8 @@ FLASH_BANK_COMMAND_HANDLER(ch32vx_flash_bank_command)
 }
 
 static int ch32vx_erase(struct flash_bank *bank, unsigned int first, unsigned int last)
-{	
-	 
+{
+
 	if (noloadflag){
 		return ERROR_OK;
 	}
@@ -86,13 +86,13 @@ static int ch32vx_erase(struct flash_bank *bank, unsigned int first, unsigned in
 static int ch32vx_write(struct flash_bank *bank, const uint8_t *buffer,
 						uint32_t offset, uint32_t count)
 {
-	
+
 	if(noloadflag)
 		return ERROR_OK;
-	
+
 	int ret = wlink_write(buffer, offset, count);
 	if((riscvchip==0x02)||(riscvchip==0x03))
-		 wlink_reset(); 
+		 wlink_reset();
 	return ret;
 }
 
@@ -145,7 +145,7 @@ static int ch32vx_probe(struct flash_bank *bank)
 	else
 		flash_size_in_kb=delfault_max_flash_size;
 	if((riscvchip==0x05)||(riscvchip==0x06)||(riscvchip==0x03))
-	{	
+	{
 		wlink_getromram(&rom,&ram);
 	if((rom != 0)&&(ram !=0))
 		LOG_INFO("ROM %d kbytes RAM %d kbytes" ,rom,ram);

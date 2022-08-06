@@ -3823,7 +3823,7 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 	struct target *target = get_current_target(CMD_CTX);
 	if((riscvchip==0x03)||(riscvchip==0x02)||(riscvchip==0x01)){
 		wlink_reset();
-		
+
 	}
 	if (CMD_ARGC < 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
@@ -3861,8 +3861,8 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 		uint8_t *buffer2;
 
 		length=image.sections[image.num_sections-1].size + image.sections[image.num_sections-1].base_address;
-		
-		
+
+
 		buffer2 = malloc(length+256);
 		memset(buffer2,0xff,length);
 		for (unsigned i = 0; i < image.num_sections; i++) {
@@ -3880,9 +3880,9 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 			}
 			length += 64-length%64;
 		}
-		
+
 		int ret=wlink_verify( length-image.sections[0].base_address, &buffer2[image.sections[0].base_address]);
-	
+
 	free(buffer2);
 	free(buffer1);
 	image_close(&image);
@@ -3909,7 +3909,7 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 			if (retval != ERROR_OK) {
 				free(buffer);
 				break;
-			}		 
+			}
 			retval = target_checksum_memory(target, image.sections[i].base_address, buf_cnt, &mem_checksum);
 			if (retval != ERROR_OK) {
 				free(buffer);
@@ -3922,7 +3922,7 @@ static COMMAND_HELPER(handle_verify_image_command_internal, enum verify_mode ver
 				goto done;
 			}
 			if (checksum != mem_checksum) {
-				
+
 				/* failed crc checksum, fall back to a binary compare */
 
 				uint8_t *data;
