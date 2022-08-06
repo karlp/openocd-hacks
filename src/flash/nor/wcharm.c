@@ -141,8 +141,8 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id);
 static int ch32x_write_block(struct flash_bank *bank, const uint8_t *buffer,
 		uint32_t address, uint32_t count);
 extern int wlink_armcheckprotect(void);
-extern void wlink_sendchip(config);
-	
+extern void wlink_sendchip(uint8_t config);
+
 
 
 /* flash bank ch32x <base> <size> 0 0 <target#>
