@@ -346,7 +346,7 @@ static struct command_context *setup_command_handler(Jim_Interp *interp)
 static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ctx)
 {
 	int ret;
-
+	
 	if (parse_cmdline_args(cmd_ctx, argc, argv) != ERROR_OK)
 		return ERROR_FAIL;
 
@@ -374,8 +374,7 @@ static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ct
 		}
 	}
 
-	ret = server_loop(cmd_ctx);
-
+	ret = server_loop(cmd_ctx);	
 	int last_signal = server_quit();
 	if (last_signal != ERROR_OK)
 		return last_signal;

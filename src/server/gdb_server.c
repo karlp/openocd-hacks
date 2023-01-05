@@ -66,6 +66,7 @@ extern int wlink_quitreset(void);
 extern unsigned char riscvchip;
 extern uint8_t armchip;
 extern void wlink_armquitreset(struct cmsis_dap *dap);
+extern int wlink_address;
 int gdb_actual_connections;
 struct target_desc_format {
 	char *tdesc;
@@ -1086,7 +1087,7 @@ static int gdb_new_connection(struct connection *connection)
 
 	return ERROR_OK;
 }
-
+extern void wlink_endprocess(void);
 static int gdb_connection_closed(struct connection *connection)
 {
 	struct target *target;
@@ -1123,7 +1124,8 @@ static int gdb_connection_closed(struct connection *connection)
 	target_call_event_callbacks(target, TARGET_EVENT_GDB_END);
 
 	target_call_event_callbacks(target, TARGET_EVENT_GDB_DETACH);
-
+   if(wchwlink)
+       wlink_endprocess();
 	return ERROR_OK;
 }
 
@@ -1619,7 +1621,9 @@ static int gdb_write_memory_binary_packet(struct connection *connection,
 	packet++;
 
 	addr = strtoull(packet, &separator, 16);
-
+	if((addr>=0x08000000)&&(wlink_address!=0x08000000)&&(addr<=0x20000000)){
+		return ERROR_SERVER_REMOTE_CLOSED;
+	}
 	if (*separator != ',') {
 		LOG_ERROR("incomplete write memory binary packet received, dropping connection");
 		return ERROR_SERVER_REMOTE_CLOSED;
@@ -1723,7 +1727,7 @@ static int gdb_breakpoint_watchpoint_packet(struct connection *connection,
 	LOG_DEBUG("[%s]", target_name(target));
 	type = strtoul(packet + 1, &separator, 16);
 	if(wchwlink){
-		if((riscvchip==6 ||(((uint16_t)chip_type) ==0x051c)) && type==1 && target->breakpoints ){
+		if((riscvchip==6 ||(((uint16_t)chip_type) ==0x050c)) && type==1 && target->breakpoints ){
 			struct breakpoint *p= target->breakpoints->next;
 			int len=0;
 			while(p){
@@ -1733,7 +1737,7 @@ static int gdb_breakpoint_watchpoint_packet(struct connection *connection,
 			if(len>2)
 				type=0;		
 		}
-		if(riscvchip==1||riscvchip==2||riscvchip==3 ||((uint16_t)chip_type) ==0x0510){
+		if(riscvchip==1||riscvchip==2||riscvchip==3 ||riscvchip==9 ||riscvchip==0x0a ||((uint16_t)chip_type) ==0x0500){
 			type=0;
 		}
 	}

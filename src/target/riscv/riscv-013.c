@@ -45,7 +45,6 @@ extern unsigned char WriteNonFullPage(unsigned long iaddr,
 
 static int execute_fence(struct target *target);
 extern unsigned char riscvchip;
-extern unsigned long pagesize;
 extern int server_quit(void);
 extern unsigned long ramaddr;
 uint32_t flashaddr=0;
@@ -889,7 +888,7 @@ int dmstatus_read_timeout(struct target *target, uint32_t *dmstatus,
 		return result;
 	int dmstatus_version = get_field(*dmstatus, DM_DMSTATUS_VERSION);
 	if (dmstatus_version != 2 && dmstatus_version != 3) {
-		
+	if(riscvchip != 9)
 		LOG_ERROR("OpenOCD only supports Debug Module version 2 (0.13) and 3 (1.0), not "
 				"%d (dmstatus=0x%x). This error might be caused by a JTAG "
 				"signal issue. Try reducing the JTAG clock speed.",
@@ -4179,7 +4178,8 @@ error:
 
 static int write_memory(struct target *target, target_addr_t address,
 		uint32_t size, uint32_t count, const uint8_t *buffer)
-{
+{	
+	
 	if (size != 1 && size != 2 && size != 4 && size != 8 && size != 16) {
 		LOG_ERROR("BUG: Unsupported size for memory write: %d", size);
 		return ERROR_FAIL;
@@ -4191,7 +4191,7 @@ static int write_memory(struct target *target, target_addr_t address,
 		  uint8_t txbuffer[4];
 		  uint32_t  length;		
 		  if((address >= ramaddr)){
-					LOG_ERROR("THIS  ADDRESSS IS NOT ACCESSIBLE");
+					LOG_ERROR("THIS  ADDRESS IS NOT ACCESSIBLE");
 					server_quit();
 					return ERROR_FAIL;																												
 			}										
@@ -4245,8 +4245,10 @@ static int write_memory(struct target *target, target_addr_t address,
 								
 			//write_flash_data(target, flashaddress, size, count, buffer);			
 		}				
-		if((riscvchip==0x01)||(riscvchip==0x02)||(riscvchip==0x06)||(riscvchip==0x05))
+		if((riscvchip==0x01)||(riscvchip==0x02)||(riscvchip==0x06)||(riscvchip==0x05)||(riscvchip==0x09)||(riscvchip==0x0a))
 		{			
+			if(address>=0x08000000)
+				address-=0x08000000;
 			write_flash_data(target, address, size, count, buffer);			
 		}
 		return ERROR_OK;

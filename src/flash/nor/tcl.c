@@ -29,7 +29,9 @@
  * @file
  * Implements Tcl commands used to access NOR flash facilities.
  */
-
+extern int wlnik_protect_check(void);
+extern int riscvchip;
+extern int wlink_quitreset(void);
 static COMMAND_HELPER(flash_command_get_bank_maybe_probe, unsigned name_index,
 	       struct flash_bank **bank, bool do_probe)
 {
@@ -399,7 +401,23 @@ COMMAND_HANDLER(handle_flash_protect_command)
 
 	return retval;
 }
+COMMAND_HANDLER(handle_flash_protect_check_command){
+	if(riscvchip==1)
+		wlink_quitreset();
+	if((riscvchip==1)||(riscvchip==5)||(riscvchip==6)||(riscvchip==9)){
+		int retval=wlnik_protect_check();
+		if(retval==4)
+			LOG_INFO("Code Read-Protect Status Enable");
+		else
+			LOG_INFO("Code Read-Protect status Disable");
+				
+	}else{
+		LOG_ERROR("This chip do not support function");
+		return ERROR_OK;
+	}
 
+
+}
 COMMAND_HANDLER(handle_flash_write_image_command)
 {
 	struct target *target = get_current_target(CMD_CTX);
@@ -1239,6 +1257,13 @@ static const struct command_registration flash_exec_command_handlers[] = {
 		.mode = COMMAND_EXEC,
 		.usage = "bank_id value",
 		.help = "Set default flash padded value",
+	},
+	{
+		.name = "protect_check",
+		.handler = handle_flash_protect_check_command,
+		.mode = COMMAND_EXEC,
+		.usage = "bank_id",
+		.help = "",
 	},
 	COMMAND_REGISTRATION_DONE
 };

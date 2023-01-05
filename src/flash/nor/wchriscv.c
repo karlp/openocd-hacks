@@ -27,6 +27,10 @@ extern int wlink_reset();
 extern void wlink_getromram(uint32_t *rom,uint32_t *ram);
 extern int wlink_write(const uint8_t *buffer, uint32_t offset, uint32_t count);
 extern int noloadflag;
+extern int  wlink_flash_protect(bool stat);
+extern int wlnik_protect_check(void);
+extern int wlink_quitreset(void);
+extern int wlink_address;
 struct ch32vx_options
 {
 	uint8_t rdp;
@@ -67,10 +71,38 @@ FLASH_BANK_COMMAND_HANDLER(ch32vx_flash_bank_command)
 
 	return ERROR_OK;
 }
+static int ch32x_protect(struct flash_bank *bank, int set, int first, int last)
+{	if(riscvchip==1)
+		wlink_quitreset();
+	if((riscvchip==1)||(riscvchip==5)||(riscvchip==6)||(riscvchip==9)){
+		int retval=wlink_flash_protect(set);
+		if(retval==ERROR_OK){
+				if(set)
+					LOG_INFO("Success to Enable Read-Protect");
+				else
+					LOG_INFO("Success to Disable Read-Protect");
+				return ERROR_OK;
+		}else{
+
+			LOG_ERROR("Operation Failed");
+			return ERROR_FAIL;
+		}
+				
+	}else{
+		LOG_ERROR("This chip do not support function");
+		return ERROR_FAIL;
+	}
+}
 
 static int ch32vx_erase(struct flash_bank *bank, int first, int last)
 {	
-	 
+	if((riscvchip==5)||(riscvchip==6)||(riscvchip==9)){
+			int retval=wlnik_protect_check();
+			if(retval==4){
+				LOG_ERROR("Read-Protect Status Currently Enabled");
+				return ERROR_FAIL;
+			}
+	}
 	if(noloadflag)
 		return ERROR_OK;
 	wlink_reset();
@@ -85,7 +117,13 @@ static int ch32vx_erase(struct flash_bank *bank, int first, int last)
 static int ch32vx_write(struct flash_bank *bank, const uint8_t *buffer,
 						uint32_t offset, uint32_t count)
 {
-	
+	if((riscvchip==5)||(riscvchip==6)||(riscvchip==9)){
+			int retval=wlnik_protect_check();
+			if(retval==4){
+				LOG_ERROR("Read-Protect Status Currently Enabled");
+				return ERROR_FAIL;
+			}
+	}
 	if(noloadflag)
 		return ERROR_OK;
 	
@@ -127,7 +165,7 @@ static int ch32vx_probe(struct flash_bank *bank)
 	uint32_t rom=0;
 	uint32_t ram=0;
 	int page_size;
-	uint32_t base_address = 0x00000000;
+	uint32_t base_address = wlink_address;
 	uint32_t rid = 0;
 	ch32vx_info->probed = 0;
 	/* read ch32 device id register */
@@ -185,6 +223,7 @@ const struct flash_driver wch_riscv_flash = {
 	.commands = ch32vx_command_handlers,
 	.flash_bank_command = ch32vx_flash_bank_command,
 	.erase = ch32vx_erase,
+	.protect = ch32x_protect,
 	.write = ch32vx_write,
 	.read = default_flash_read,
 	.probe = ch32vx_probe,

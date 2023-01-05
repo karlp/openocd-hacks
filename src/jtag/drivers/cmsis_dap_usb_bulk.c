@@ -51,7 +51,7 @@ struct cmsis_dap_backend_data {
 };
 
 static int cmsis_dap_usb_interface = -1;
-
+extern bool wlink549;
 static void cmsis_dap_usb_close(struct cmsis_dap *dap);
 static int cmsis_dap_usb_alloc(struct cmsis_dap *dap, unsigned int pkt_sz);
 
@@ -558,11 +558,12 @@ void wlink_sendchip(uint8_t config)
 	libusb_bulk_transfer(wlink_dev_handle, 0x02,buffer_code,4,&transferred,timeout);
 	libusb_bulk_transfer(wlink_dev_handle, 0x83,buffer_rcode,sizeof(buffer_rcode),&transferred,timeout);	
 	chip_type=((unsigned int)buffer_rcode[19]) + (((unsigned int)buffer_rcode[18])<<8) + (((unsigned int)buffer_rcode[17])<<16) +(((unsigned int) buffer_rcode[16])<<24);	
+	chip_type = chip_type & 0xffffff0f;
 	bool type_A=false;
 	bool type_B=false;
-	if(chip_type==0x20700418 ||chip_type==0x20300414 ||chip_type==0x20310414 )
+	if(chip_type==0x20700408 ||chip_type==0x20300404 ||chip_type==0x20310404 )
 		type_A=true;
-	if(chip_type==0x2080041c  || chip_type==0x2081041c)
+	if(chip_type==0x2080040c  || chip_type==0x2081040c)
 		type_B=true;
 	switch(config){
 		case 0:
@@ -642,6 +643,7 @@ void wlink_armversion(struct cmsis_dap *dap){
 		{
 		case 1:
 			wlink_name="WCH-Link-CH549  mod:ARM";
+			wlink549=true;
 			break;
 		case 2:
 			wlink_name="WCH-LinkE-CH32V307  mod:ARM";

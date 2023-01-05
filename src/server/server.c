@@ -586,6 +586,7 @@ int server_loop(struct command_context *command_context)
 					c = c->next;
 				}
 			}
+			
 		}
 
 #ifdef _WIN32
@@ -596,11 +597,10 @@ int server_loop(struct command_context *command_context)
 		}
 #endif
 	}
-
+	
 	/* when quit for signal or CTRL-C, run (eventually user implemented) "shutdown" */
 	if (shutdown_openocd == SHUTDOWN_WITH_SIGNAL_CODE)
 		command_run_line(command_context, "shutdown");
-
 	return shutdown_openocd == SHUTDOWN_WITH_ERROR_CODE ? ERROR_FAIL : ERROR_OK;
 }
 

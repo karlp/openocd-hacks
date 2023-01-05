@@ -790,7 +790,7 @@ int flash_write_unlock_verify(struct target *target, struct image *image,
 
 		/* find the corresponding flash bank */
 		retval = get_flash_bank_by_addr(target, run_address, false, &c);
-		startaddr=sections[0]->base_address - c->base;
+		
 		if (retval != ERROR_OK)
 			goto done;
 		if (!c) {
@@ -799,7 +799,7 @@ int flash_write_unlock_verify(struct target *target, struct image *image,
 			section_offset = 0;
 			continue;
 		}
-
+		startaddr=sections[0]->base_address - c->base;
 		/* collect consecutive sections which fall into the same bank */
 		section_last = section;
 		padding[section] = 0;
@@ -1000,6 +1000,10 @@ int flash_write_unlock_verify(struct target *target, struct image *image,
 		if (written)
 			*written += run_size;	/* add run size to total written counter */
 	}
+	
+	if(!c){
+		return ERROR_FAIL;
+    }
 	if(riscvchip){		
 	
 	 flash_driver_write(c, &binbuf[startaddr], startaddr, (binlen-startaddr));

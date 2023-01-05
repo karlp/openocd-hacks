@@ -141,8 +141,9 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id);
 static int ch32x_write_block(struct flash_bank *bank, const uint8_t *buffer,
 		uint32_t address, uint32_t count);
 extern int wlink_armcheckprotect(void);
-extern void wlink_sendchip(config);
-	
+extern void wlink_sendchip(uint8_t config);
+extern  bool wlink549;
+
 
 
 /* flash bank ch32x <base> <size> 0 0 <target#>
@@ -417,7 +418,8 @@ static int ch32x_erase(struct flash_bank *bank, int first, int last)
 
 static int ch32x_protect(struct flash_bank *bank, int set, int first, int last)
 {
-	
+	printf("%d %d %d\n",set,first,last);
+	return ERROR_OK;
 	struct target *target = bank->target;
 	struct ch32x_flash_bank *ch32x_info = bank->driver_priv;
 
@@ -477,18 +479,22 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
 	uint8_t user_cfg,config;
 	target_read_u8(target, 0x1ffff802, &user_cfg);
 	config=user_cfg>>6;
-	target_read_u32(target, 0x1ffff884, &testid);			
-  	if(((testid>>16)==0x2000)||((testid>>16)==0x1000)||((testid>>16)==0x3000)){
-  		target_read_u32(target, 0x1ffff7e8, &tmp);
-  		target_read_u32(target, 0x1ffff8a0, &tmp1);
-  		if(tmp==tmp1){
-  				target_read_u32(target, 0x1ffff880, &tmp2);
+	target_read_u32(target, 0x1ffff884, &testid);
+	testid =testid >>16;
+	testid &=0xff00;
+	
+  	if((testid==0x2000)||(testid==0x1000)||(testid==0x3000)){
+  		// target_read_u32(target, 0x1ffff7e8, &tmp);
+  		// target_read_u32(target, 0x1ffff8a0, &tmp1);
+  		// if(tmp==tmp1){
+  			target_read_u32(target, 0x1ffff880, &tmp2);
+			
   			  if(tmp2==0xdc78fe34)
   			    armchip=1;
   				*device_id=0x20000410;
   				wlink_sendchip(config);
   				return ERROR_OK;
-  		}
+  		// }
   	
   	}
   	target_read_u32(target, 0xe000edfc, &testid);
@@ -503,7 +509,10 @@ static int ch32x_get_device_id(struct flash_bank *bank, uint32_t *device_id)
   			wlink_sendchip(config);
   			return ERROR_OK;
 		}
-
+	if((armchip != 1)&&(armchip != 2 ) && wlink549 ){
+		LOG_ERROR(" WCH-Link-CH549 does not support this chip, please use WCH-LinkE");
+		return ERROR_FAIL;
+	}
 	return ERROR_FAIL;
 }
 
@@ -540,7 +549,7 @@ static int ch32x_probe(struct flash_bank *bank)
 	if (retval != ERROR_OK)
 		return retval;
 	
-	LOG_INFO("device id = 0x%08" PRIx32 "", device_id);
+	// LOG_INFO("device id = 0x%08" PRIx32 "", device_id);
 	rid=device_id & 0xfff ;
 	/* set page size, protection granularity and max flash size depending on family */
 	switch (device_id & 0xfff) {
