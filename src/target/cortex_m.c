@@ -123,6 +123,19 @@ static const struct cortex_m_part_info cortex_m_parts[] = {
 		.arch = ARM_ARCH_V8M,
 		.flags = CORTEX_M_F_HAS_FPV5,
 	},
+	{
+		.implementor = ARM_IMPLEMENTOR_REALTEK,
+		.partno = 0xd20,
+		.name = "Real-M200 (CM23)",
+		.arch = ARM_ARCH_V8M,
+	},
+	{
+		.implementor = ARM_IMPLEMENTOR_REALTEK,
+		.partno = 0xd22,
+		.name = "Real-M300 (CM33)",
+		.arch = ARM_ARCH_V8M,
+		.flags = CORTEX_M_F_HAS_FPV5,
+	},
 };
 
 /* forward declarations */
