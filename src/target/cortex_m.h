@@ -31,12 +31,18 @@
 
 #define CPUID		0xE000ED00
 
+#define ARM_CPUID_IMPLEMENTOR_POS	24
+#define ARM_CPUID_IMPLEMENTOR_MASK	(0xff << ARM_CPUID_IMPLEMENTOR_POS)
 #define ARM_CPUID_PARTNO_POS    4
 #define ARM_CPUID_PARTNO_MASK	(0xFFF << ARM_CPUID_PARTNO_POS)
 
+/** ARM assigned core part ids.
+ * Only list the _ARM_ assigned fields here.
+ * This is unfortunately used as a heuristic stand in for vendor part ids
+ * in some flash drivers.
+ */
 enum cortex_m_partno {
 	CORTEX_M_PARTNO_INVALID,
-	STAR_MC1_PARTNO    = 0x132,
 	CORTEX_M0_PARTNO   = 0xC20,
 	CORTEX_M1_PARTNO   = 0xC21,
 	CORTEX_M3_PARTNO   = 0xC23,
@@ -55,7 +61,8 @@ enum cortex_m_partno {
 #define CORTEX_M_F_TAR_AUTOINCR_BLOCK_4K  BIT(2)
 
 struct cortex_m_part_info {
-	enum cortex_m_partno partno;
+	int implementor;
+	int partno;
 	const char *name;
 	enum arm_arch arch;
 	uint32_t flags;
@@ -296,7 +303,7 @@ target_to_cortex_m_safe(struct target *target)
  * or CORTEX_M_PARTNO_INVALID if the magic number does not match
  * or core_info is not initialised.
  */
-static inline enum cortex_m_partno cortex_m_get_partno_safe(struct target *target)
+static inline int cortex_m_get_partno_safe(struct target *target)
 {
 	struct cortex_m_common *cortex_m = target_to_cortex_m_safe(target);
 	if (!cortex_m)

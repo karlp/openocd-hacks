@@ -50,63 +50,75 @@
 /* Supported Cortex-M Cores */
 static const struct cortex_m_part_info cortex_m_parts[] = {
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M0_PARTNO,
 		.name = "Cortex-M0",
 		.arch = ARM_ARCH_V6M,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M0P_PARTNO,
 		.name = "Cortex-M0+",
 		.arch = ARM_ARCH_V6M,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M1_PARTNO,
 		.name = "Cortex-M1",
 		.arch = ARM_ARCH_V6M,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M3_PARTNO,
 		.name = "Cortex-M3",
 		.arch = ARM_ARCH_V7M,
 		.flags = CORTEX_M_F_TAR_AUTOINCR_BLOCK_4K,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M4_PARTNO,
 		.name = "Cortex-M4",
 		.arch = ARM_ARCH_V7M,
 		.flags = CORTEX_M_F_HAS_FPV4 | CORTEX_M_F_TAR_AUTOINCR_BLOCK_4K,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M7_PARTNO,
 		.name = "Cortex-M7",
 		.arch = ARM_ARCH_V7M,
 		.flags = CORTEX_M_F_HAS_FPV5,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M23_PARTNO,
 		.name = "Cortex-M23",
 		.arch = ARM_ARCH_V8M,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M33_PARTNO,
 		.name = "Cortex-M33",
 		.arch = ARM_ARCH_V8M,
 		.flags = CORTEX_M_F_HAS_FPV5,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M35P_PARTNO,
 		.name = "Cortex-M35P",
 		.arch = ARM_ARCH_V8M,
 		.flags = CORTEX_M_F_HAS_FPV5,
 	},
 	{
+		.implementor = ARM_IMPLEMENTOR_ARM,
 		.partno = CORTEX_M55_PARTNO,
 		.name = "Cortex-M55",
 		.arch = ARM_ARCH_V8M,
 		.flags = CORTEX_M_F_HAS_FPV5,
 	},
 	{
-		.partno = STAR_MC1_PARTNO,
+		/* FIXME: VERIFY! */
+		.implementor = ARM_IMPLEMENTOR_ARM,
+		.partno = 0x132,
 		.name = "STAR-MC1",
 		.arch = ARM_ARCH_V8M,
 		.flags = CORTEX_M_F_HAS_FPV5,
@@ -2533,17 +2545,19 @@ int cortex_m_examine(struct target *target)
 			return retval;
 
 		/* Get ARCH and CPU types */
-		const enum cortex_m_partno core_partno = (cpuid & ARM_CPUID_PARTNO_MASK) >> ARM_CPUID_PARTNO_POS;
+		const int core_impl = (cpuid & ARM_CPUID_IMPLEMENTOR_MASK) >> ARM_CPUID_IMPLEMENTOR_POS;
+		const int core_partno = (cpuid & ARM_CPUID_PARTNO_MASK) >> ARM_CPUID_PARTNO_POS;
 
 		for (unsigned int n = 0; n < ARRAY_SIZE(cortex_m_parts); n++) {
-			if (core_partno == cortex_m_parts[n].partno) {
+			if (core_impl == cortex_m_parts[n].implementor
+				&& core_partno == cortex_m_parts[n].partno) {
 				cortex_m->core_info = &cortex_m_parts[n];
 				break;
 			}
 		}
 
 		if (!cortex_m->core_info) {
-			LOG_TARGET_ERROR(target, "Cortex-M PARTNO 0x%x is unrecognized", core_partno);
+			LOG_TARGET_ERROR(target, "Cortex-M Implementor: 0x%x, PARTNO 0x%x is unrecognized", core_impl, core_partno);
 			return ERROR_FAIL;
 		}
 
