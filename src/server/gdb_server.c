@@ -3260,7 +3260,9 @@ static bool gdb_handle_vrun_packet(struct connection *connection, const char *pa
 	gdb_put_packet(connection, "S00", 3);
 	return true;
 }
-
+extern void wlink_quitreset(void);
+extern int register_write_direct(struct target *target, unsigned number,
+		uint64_t value);
 static int gdb_v_packet(struct connection *connection,
 		char const *packet, int packet_size)
 {
@@ -3416,7 +3418,13 @@ static int gdb_v_packet(struct connection *connection,
 
 		return ERROR_OK;
 	}
-
+	if (strncmp(packet, "vKill", 5) == 0) {
+		if (strncmp(target->type->name, "wch_riscv", 9) == 0) {
+			// uint64_t value=0;
+			// register_write_direct(target, 0x7f2,0);
+			wlink_quitreset();
+		}			
+	}
 	gdb_put_packet(connection, "", 0);
 	return ERROR_OK;
 }
@@ -3538,7 +3546,25 @@ static int gdb_input_inner(struct connection *connection)
 
 		/* terminate with zero */
 		gdb_packet_buffer[packet_size] = '\0';
-
+		// if(1){	
+		// 	char buf[64];
+		// 	unsigned offset = 0;
+		// 	int i = 0;
+		// 	while (i < packet_size && offset < 56) {
+		// 		if (packet[i] == '\\') {
+		// 			buf[offset++] = '\\';
+		// 			buf[offset++] = '\\';
+		// 		} else if (isprint(packet[i])) {
+		// 			buf[offset++] = packet[i];
+		// 		} else {
+		// 			sprintf(buf + offset, "\\x%02x", (unsigned char) packet[i]);
+		// 			offset += 4;
+		// 		}
+		// 		i++;
+		// 	}
+		// 	buf[offset] = 0;
+		// 	LOG_INFO("received packet: '%s'%s", buf, i < packet_size ? "..." : "");
+		// }
 		if (packet_size > 0) {
 
 			gdb_log_incoming_packet(connection, gdb_packet_buffer);

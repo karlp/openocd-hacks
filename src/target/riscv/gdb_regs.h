@@ -2,7 +2,7 @@
 
 #ifndef TARGET__RISCV__GDB_REGS_H
 #define TARGET__RISCV__GDB_REGS_H
-
+#include "encoding.h"
 /* gdb's register list is defined in riscv_gdb_reg_names gdb/riscv-tdep.c in
  * its source tree. We must interpret the numbers the same here. */
 enum gdb_regno {

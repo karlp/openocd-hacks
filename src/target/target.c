@@ -112,7 +112,7 @@ extern struct target_type riscv_target;
 extern struct target_type mem_ap_target;
 extern struct target_type esirisc_target;
 extern struct target_type arcv2_target;
-
+extern struct target_type wch_riscv_target;
 static struct target_type *target_types[] = {
 	&arm7tdmi_target,
 	&arm9tdmi_target,
@@ -150,6 +150,7 @@ static struct target_type *target_types[] = {
 	&arcv2_target,
 	&aarch64_target,
 	&mips_mips64_target,
+	&wch_riscv_target,
 	NULL,
 };
 
@@ -824,7 +825,7 @@ const char *target_type_name(struct target *target)
 	return target->type->name;
 }
 
-static int target_soft_reset_halt(struct target *target)
+ int target_soft_reset_halt(struct target *target)
 {
 	if (!target_was_examined(target)) {
 		LOG_ERROR("Target not examined yet");
@@ -863,7 +864,7 @@ int target_run_algorithm(struct target *target,
 		int timeout_ms, void *arch_info)
 {
 	int retval = ERROR_FAIL;
-
+	
 	if (!target_was_examined(target)) {
 		LOG_ERROR("Target not examined yet");
 		goto done;
@@ -873,7 +874,7 @@ int target_run_algorithm(struct target *target,
 				target_type_name(target), __func__);
 		goto done;
 	}
-
+	
 	target->running_alg = true;
 	retval = target->type->run_algorithm(target,
 			num_mem_params, mem_params,
@@ -3096,13 +3097,12 @@ COMMAND_HANDLER(handle_reg_command)
 	/* list all available registers for the current target */
 	if (CMD_ARGC == 0) {
 		struct reg_cache *cache = target->reg_cache;
-
 		unsigned int count = 0;
 		while (cache) {
 			unsigned i;
 
 			command_print(CMD, "===== %s", cache->name);
-
+			
 			for (i = 0, reg = cache->reg_list;
 					i < cache->num_regs;
 					i++, reg++, count++) {
@@ -3355,7 +3355,12 @@ COMMAND_HANDLER(handle_reset_command)
 	/* reset *all* targets */
 	return target_process_reset(CMD, reset_mode);
 }
-
+extern void wlink_softreset(void);
+COMMAND_HANDLER(handle_wlink_reset_resume_command)
+{
+	
+	wlink_softreset();
+}
 
 COMMAND_HANDLER(handle_resume_command)
 {
@@ -4403,6 +4408,7 @@ COMMAND_HANDLER(handle_profile_command)
 	free(samples);
 	return retval;
 }
+
 
 static int new_u64_array_element(Jim_Interp *interp, const char *varname, int idx, uint64_t val)
 {
@@ -7014,6 +7020,14 @@ static const struct command_registration target_exec_command_handlers[] = {
 		.help = "Reset all targets into the specified mode. "
 			"Default reset mode is run, if not given.",
 	},
+	{
+		.name = "wlink_reset_resume",
+		.handler = handle_wlink_reset_resume_command,
+		.mode = COMMAND_EXEC,
+		.usage = "",
+		.help = "Reset && resume. ",
+	},
+
 	{
 		.name = "soft_reset_halt",
 		.handler = handle_soft_reset_halt_command,
