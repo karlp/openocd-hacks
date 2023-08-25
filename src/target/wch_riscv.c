@@ -85,6 +85,8 @@ static int wch_riscv_init_target(struct command_context *cmd_ctx,
 	RISCV_INFO(info);
 	info->cmd_ctx = cmd_ctx;
 
+	riscv_semihosting_init(target);
+
 	target->debug_reason = DBG_REASON_DBGRQ;
 
 	return ERROR_OK;
