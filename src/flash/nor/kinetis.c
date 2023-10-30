@@ -2316,7 +2316,7 @@ static int kinetis_probe_chip(struct kinetis_chip *k_chip)
 			break;
 
 		case KINETIS_SDID_SERIESID_KL:
-			/* KL-series */
+			/* KL-series and K32L2 */
 			k_chip->pflash_sector_size = 1<<10;
 			k_chip->nvm_sector_size = 1<<10;
 			/* autodetect 1 or 2 blocks */
@@ -2338,10 +2338,33 @@ static int kinetis_probe_chip(struct kinetis_chip *k_chip)
 				k_chip->watchdog_type = KINETIS_WDOG32_KL28;
 				k_chip->sysmodectrlr_type = KINETIS_SMC32;
 				break;
+			case KINETIS_SDID_FAMILYID_K0X | KINETIS_SDID_SUBFAMID_KX1: /* K32L3A-singlecore*/
+				cpu_mhz = 96;
+				k_chip->pflash_sector_size = 2<<10;
+				k_chip->watchdog_type = KINETIS_WDOG32_KL28;
+				k_chip->sysmodectrlr_type = KINETIS_SMC32;
+				snprintf(name, sizeof(name), "K32L3A");
+				break;
+			case KINETIS_SDID_FAMILYID_K2X | KINETIS_SDID_SUBFAMID_KX1: /* K32L2A-singlecore*/
+				cpu_mhz = 96;
+				k_chip->pflash_sector_size = 2<<10;
+				k_chip->watchdog_type = KINETIS_WDOG32_KL28;
+				k_chip->sysmodectrlr_type = KINETIS_SMC32;
+				snprintf(name, sizeof(name), "K32L2A");
+				break;
+			case KINETIS_SDID_FAMILYID_K4X | KINETIS_SDID_SUBFAMID_KX1: /* K32L2B-singlecore*/
+				cpu_mhz = 96;
+				k_chip->pflash_sector_size = 2<<10;
+				k_chip->watchdog_type = KINETIS_WDOG32_KL28;
+				k_chip->sysmodectrlr_type = KINETIS_SMC32;
+				snprintf(name, sizeof(name), "K32L");
+				break;
 			}
 
-			snprintf(name, sizeof(name), "MKL%u%uZ%%s%u",
-				 familyid, subfamid, cpu_mhz / 10);
+			if (name[0] == '\0') {
+				snprintf(name, sizeof(name), "MKL%u%uZ%%s%u",
+					familyid, subfamid, cpu_mhz / 10);
+			}
 			break;
 
 		case KINETIS_SDID_SERIESID_KW:
@@ -2519,8 +2542,14 @@ static int kinetis_probe_chip(struct kinetis_chip *k_chip)
 	k_chip->fcfg2_maxaddr0_shifted = ((k_chip->sim_fcfg2 >> 24) & 0x7f) << maxaddr_shift;
 	k_chip->fcfg2_maxaddr1_shifted = ((k_chip->sim_fcfg2 >> 16) & 0x7f) << maxaddr_shift;
 
-	if (num_blocks == 0)
+	if (num_blocks == 0) {
+		if (k_chip->fcfg2_maxaddr1_shifted != k_chip->fcfg2_maxaddr0_shifted) {
+			/* At least on K32L, maxaddr1 is rsvd, but has a bit set in it! */
+			k_chip->fcfg2_maxaddr1_shifted = k_chip->fcfg2_maxaddr0_shifted;
+		}
 		num_blocks = k_chip->fcfg2_maxaddr1_shifted ? 2 : 1;
+		printf("KARL - numblocks was zero, resetting to: %d\n", num_blocks);
+	}
 	else if (k_chip->fcfg2_maxaddr1_shifted == 0 && num_blocks >= 2 && fcfg2_pflsh) {
 		/* fcfg2_maxaddr1 may be zero due to partitioning whole NVM as EEPROM backup
 		 * Do not adjust block count in this case! */
